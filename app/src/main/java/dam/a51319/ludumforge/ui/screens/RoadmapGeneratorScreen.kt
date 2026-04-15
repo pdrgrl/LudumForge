@@ -2,8 +2,11 @@ package dam.a51319.ludumforge.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -22,14 +25,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dam.a51319.ludumforge.models.Task
+import dam.a51319.ludumforge.models.TaskStatus
 import dam.a51319.ludumforge.ui.theme.*
+import dam.a51319.ludumforge.viewmodels.RoadmapGeneratorViewModel
+import dam.a51319.ludumforge.viewmodels.RoadmapUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoadmapGeneratorScreen() {
-    var projectVision by remember { mutableStateOf("") }
-    var teamSize by remember { mutableStateOf("") }
-    var projectHorizon by remember { mutableStateOf("") }
+fun RoadmapGeneratorScreen(viewModel: RoadmapGeneratorViewModel = viewModel()) {
+
+    // ViewModel State Collection
+    val projectVision by viewModel.gameTitle.collectAsState()
+    val teamSize by viewModel.teamSize.collectAsState()
+    val projectHorizon by viewModel.duration.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -65,45 +76,6 @@ fun RoadmapGeneratorScreen() {
                 )
             )
         },
-//        bottomBar = {
-//            NavigationBar(
-//                containerColor = SurfaceContainerLowest,
-//                contentColor = SecondaryGray,
-//                tonalElevation = 8.dp
-//            ) {
-//                NavigationBarItem(
-//                    icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
-//                    label = { Text("Project Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-//                    selected = false,
-//                    onClick = { /* TODO */ },
-//                    colors = NavigationBarItemDefaults.colors(
-//                        unselectedIconColor = SecondaryGray,
-//                        unselectedTextColor = SecondaryGray
-//                    )
-//                )
-//                NavigationBarItem(
-//                    icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
-//                    label = { Text("Team Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-//                    selected = false,
-//                    onClick = { /* TODO */ },
-//                    colors = NavigationBarItemDefaults.colors(
-//                        unselectedIconColor = SecondaryGray,
-//                        unselectedTextColor = SecondaryGray
-//                    )
-//                )
-//                NavigationBarItem(
-//                    icon = { Icon(Icons.AutoMirrored.Filled.AltRoute, contentDescription = "Roadmap") },
-//                    label = { Text("Roadmap", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-//                    selected = true,
-//                    colors = NavigationBarItemDefaults.colors(
-//                        indicatorColor = SurfaceContainerHigh,
-//                        selectedIconColor = PrimaryBlack,
-//                        selectedTextColor = PrimaryBlack
-//                    ),
-//                    onClick = { /* TODO */ }
-//                )
-//            }
-//        },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(
@@ -130,14 +102,9 @@ fun RoadmapGeneratorScreen() {
 
             // Project Vision Input
             item {
-                Text(
-                    text = "PROJECT VISION",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = SecondaryGray
-                )
+                Text("PROJECT VISION", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Neumorphic Inset approximation
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -147,7 +114,7 @@ fun RoadmapGeneratorScreen() {
                 ) {
                     BasicTextField(
                         value = projectVision,
-                        onValueChange = { projectVision = it },
+                        onValueChange = { viewModel.gameTitle.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .defaultMinSize(minHeight = 120.dp),
@@ -169,11 +136,7 @@ fun RoadmapGeneratorScreen() {
 
             // Personnel Count
             item {
-                Text(
-                    text = "PERSONNEL COUNT",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = SecondaryGray
-                )
+                Text("PERSONNEL COUNT", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
@@ -188,7 +151,7 @@ fun RoadmapGeneratorScreen() {
                     Spacer(modifier = Modifier.width(12.dp))
                     BasicTextField(
                         value = teamSize,
-                        onValueChange = { teamSize = it },
+                        onValueChange = { viewModel.teamSize.value = it },
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = PrimaryBlack),
                         decorationBox = { innerTextField ->
@@ -202,11 +165,7 @@ fun RoadmapGeneratorScreen() {
 
             // Project Horizon
             item {
-                Text(
-                    text = "PROJECT HORIZON",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = SecondaryGray
-                )
+                Text("PROJECT HORIZON", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
@@ -221,7 +180,7 @@ fun RoadmapGeneratorScreen() {
                     Spacer(modifier = Modifier.width(12.dp))
                     BasicTextField(
                         value = projectHorizon,
-                        onValueChange = { projectHorizon = it },
+                        onValueChange = { viewModel.duration.value = it },
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = PrimaryBlack),
                         decorationBox = { innerTextField ->
@@ -241,6 +200,7 @@ fun RoadmapGeneratorScreen() {
                         .shadow(elevation = 16.dp, shape = RoundedCornerShape(12.dp), spotColor = PrimaryBlack.copy(alpha = 0.2f))
                         .clip(RoundedCornerShape(12.dp))
                         .background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
+                        .clickable { viewModel.onGenerateClicked() }
                         .padding(vertical = 18.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -258,35 +218,55 @@ fun RoadmapGeneratorScreen() {
                 Spacer(modifier = Modifier.height(40.dp))
             }
 
-            // Contextual Info
+            // UI State Display
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, GhostBorder)
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Architect’s Protocol",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryBlack
-                            )
+                when (uiState) {
+                    is RoadmapUiState.Loading -> {
+                        Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = PrimaryBlack)
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        ProtocolStep("01", "Be specific about genre and target platforms to ensure asset pipeline accuracy.")
-                        Spacer(modifier = Modifier.height(20.dp))
-                        ProtocolStep("02", "Team size influences the parallelization of art and engineering sprints.")
-                        Spacer(modifier = Modifier.height(20.dp))
-                        ProtocolStep("03", "The AI generator utilizes studio-standard milestones (Pre-Alpha, Vertical Slice, Beta).")
+                    }
+                    is RoadmapUiState.Error -> {
+                        Text(
+                            text = (uiState as RoadmapUiState.Error).message,
+                            color = ErrorRed,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    }
+                    is RoadmapUiState.Success -> {
+                        Text("GENERATED ROADMAP", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    else -> {
+                        // Idle state - show architect protocol
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, GhostBorder)
+                        ) {
+                            Column(modifier = Modifier.padding(24.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Architect’s Protocol", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                                }
+                                Spacer(modifier = Modifier.height(24.dp))
+                                ProtocolStep("01", "Be specific about genre and target platforms to ensure asset pipeline accuracy.")
+                                Spacer(modifier = Modifier.height(20.dp))
+                                ProtocolStep("02", "Team size influences the parallelization of art and engineering sprints.")
+                            }
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // Show Tasks if Success
+            if (uiState is RoadmapUiState.Success) {
+                val generatedTasks = (uiState as RoadmapUiState.Success).tasks
+                items(generatedTasks) { task ->
+                    GeneratedTaskCard(task)
+                }
             }
         }
     }
@@ -294,35 +274,32 @@ fun RoadmapGeneratorScreen() {
 
 @Composable
 fun ProtocolStep(number: String, description: String) {
-    Row(verticalAlignment = Alignment.Top) { // FIXED: Was using Flutter syntax previously!
+    Row(verticalAlignment = Alignment.Top) {
         Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(SurfaceContainerHigh),
+            modifier = Modifier.size(32.dp).clip(CircleShape).background(SurfaceContainerHigh),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = number,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryBlack
-            )
+            Text(number, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = OnSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
-        )
+        Text(description, style = MaterialTheme.typography.bodyLarge, color = OnSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun RoadmapGeneratorScreenPreview() {
-    LudumForgeTheme {
-        RoadmapGeneratorScreen()
+fun GeneratedTaskCard(task: Task) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, GhostBorder)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(task.category.name, style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(task.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), color = PrimaryBlack)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Est: ${task.estimatedMinutes} mins", fontSize = 12.sp, color = SecondaryGray)
+        }
     }
 }
