@@ -1,17 +1,15 @@
 package dam.a51319.ludumforge.models
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
 enum class UserRole {
-    ADMIN,
-    DEVELOPER,
-    ARTIST,
-    AUDIO_ENGINEER,
-    GAME_DESIGNER
+    ADMIN, DEVELOPER, ARTIST, AUDIO_ENGINEER, GAME_DESIGNER
 }
 
-/**
- * Represents a developer or jam participant.
- */
+@Entity(tableName = "users")
 data class User(
+    @PrimaryKey
     val id: String = "",
     val username: String = "",
     val email: String = "",

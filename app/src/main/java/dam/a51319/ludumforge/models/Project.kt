@@ -1,19 +1,16 @@
 package dam.a51319.ludumforge.models
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.util.Date
 
 enum class ProjectStatus {
-    PLANNING,
-    ACTIVE,
-    SUBMITTED,
-    COMPLETED,
-    CANCELLED
+    PLANNING, ACTIVE, SUBMITTED, COMPLETED, CANCELLED
 }
 
-/**
- * Represents a Game Jam project.
- */
+@Entity(tableName = "projects")
 data class Project(
+    @PrimaryKey
     val id: String = "",
     val name: String = "",
     val theme: String = "",
