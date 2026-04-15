@@ -1,40 +1,37 @@
 package dam.a51319.ludumforge.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-// Strict Dark Palette ignoring system light/dark mode
-private val StrictDarkColorScheme = darkColorScheme(
-    primary = NeonPurple,
-    onPrimary = BackgroundDark,
-    primaryContainer = NeonPurpleDark,
-    onPrimaryContainer = TextPrimary,
+// Strict Light Palette enforcing "The Architect's Vellum"
+private val StudioLightColorScheme = lightColorScheme(
+    primary = PrimaryBlack,
+    onPrimary = SurfaceContainerLowest,
+    primaryContainer = PrimaryContainerDark,
+    onPrimaryContainer = SurfaceContainerLowest,
 
-    secondary = NeonGreen,
-    onSecondary = BackgroundDark,
-    secondaryContainer = NeonGreenDark,
-    onSecondaryContainer = TextPrimary,
+    secondary = SecondaryGray,
+    onSecondary = SurfaceContainerLowest,
 
-    background = BackgroundDark,
-    onBackground = TextPrimary,
+    background = SurfaceBase,
+    onBackground = PrimaryBlack,
 
-    surface = SurfaceDark,
-    onSurface = TextPrimary,
-    surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = TextSecondary,
+    surface = SurfaceBase,
+    onSurface = PrimaryBlack,
+    surfaceVariant = SurfaceContainerHigh,
+    onSurfaceVariant = OnSurfaceVariant,
 
     error = ErrorRed,
-    onError = BackgroundDark
+    onError = SurfaceContainerLowest
 )
 
 @Composable
 fun LudumForgeTheme(
-    // Removed dynamicColor and darkTheme booleans to enforce our strict aesthetic
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = StrictDarkColorScheme, // Enforces the strict dark aesthetic
+        colorScheme = StudioLightColorScheme, // Enforces strict light mode
         typography = Typography,
         content = content
     )
