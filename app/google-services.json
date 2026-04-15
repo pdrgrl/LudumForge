@@ -12,7 +12,12 @@
           "package_name": "dam.a51319.ludumforge"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "528605238592-ia3mc3v97js8l9mf0d5m43f0tu1f315j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBJtsLwLzsZOcJc6Telc5q_JhSPDeA6UX0"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528605238592-ia3mc3v97js8l9mf0d5m43f0tu1f315j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
