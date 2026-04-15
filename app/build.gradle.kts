@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "dam.a5139.ludumforge"
+    namespace = "dam.a51319.ludumforge"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1

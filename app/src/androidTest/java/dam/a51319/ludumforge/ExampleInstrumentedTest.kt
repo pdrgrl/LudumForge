@@ -1,4 +1,4 @@
-package dam.a5139.ludumforge
+package dam.a51319.ludumforge
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,4 +1,4 @@
-package dam.a5139.ludumforge
+package dam.a51319.ludumforge
 
 import org.junit.Test
 
