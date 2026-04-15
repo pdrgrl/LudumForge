@@ -1,5 +1,4 @@
 package dam.a51319.ludumforge.ui.navigation
-import dam.a51319.ludumforge.ui.screens.*
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -19,9 +18,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import dam.a51319.ludumforge.ui.screens.*
+import dam.a51319.ludumforge.ui.screens.LoginScreen
+import dam.a51319.ludumforge.ui.screens.OfflineTerminalScreen
+import dam.a51319.ludumforge.ui.screens.PersonalDashboardScreen
+import dam.a51319.ludumforge.ui.screens.PublicJamsScreen
+import dam.a51319.ludumforge.ui.screens.RegisterScreen
+import dam.a51319.ludumforge.ui.screens.RoadmapGeneratorScreen
+import dam.a51319.ludumforge.ui.screens.TeamWorkspaceScreen
 
 object Routes {
+    const val LOGIN = "login"
+    const val REGISTER = "register"
     const val PERSONAL_DASHBOARD = "personal_dashboard"
     const val TEAM_WORKSPACE = "team_workspace"
     const val PUBLIC_JAMS = "public_jams"
@@ -32,47 +39,54 @@ object Routes {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-
-    // Determine the current route to highlight the correct bottom tab
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     Scaffold(
         bottomBar = {
-            // Only show BottomBar on the main 3 tabs
-            val showBottomBar = currentRoute in listOf(
+            val mainTabs = listOf(
                 Routes.PERSONAL_DASHBOARD,
                 Routes.TEAM_WORKSPACE,
                 Routes.PUBLIC_JAMS
             )
-
-            if (showBottomBar) {
+            if (currentRoute in mainTabs) {
                 LudumForgeBottomBar(navController = navController, currentRoute = currentRoute)
             }
         }
-    ) { innerPadding ->
+    )  { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.PERSONAL_DASHBOARD,
+            startDestination = Routes.LOGIN, // Start here
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Routes.PERSONAL_DASHBOARD) {
-                // You can inject the PersonalDashboardViewModel here later!
-                PersonalDashboardScreen()
+            // AUTH ROUTES
+            composable(Routes.LOGIN) {
+                LoginScreen(
+                    onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
+                    onLoginSuccess = {
+                        navController.navigate(Routes.PERSONAL_DASHBOARD) {
+                            popUpTo(Routes.LOGIN) { inclusive = true } // Clear Login from stack
+                        }
+                    }
+                )
             }
-            composable(Routes.TEAM_WORKSPACE) {
-                // You can inject the TeamWorkspaceViewModel here later!
-                TeamWorkspaceScreen() // This is your Team Workspace screen
+            composable(Routes.REGISTER) {
+                RegisterScreen(
+                    onNavigateToLogin = { navController.popBackStack() },
+                    onRegisterSuccess = {
+                        navController.navigate(Routes.PERSONAL_DASHBOARD) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                    }
+                )
             }
-            composable(Routes.PUBLIC_JAMS) {
-                PublicJamsScreen()
-            }
-            composable(Routes.ROADMAP_GENERATOR) {
-                RoadmapGeneratorScreen()
-            }
-            composable(Routes.OFFLINE_TERMINAL) {
-                OfflineTerminalScreen()
-            }
+
+            // APP ROUTES
+            composable(Routes.PERSONAL_DASHBOARD) { PersonalDashboardScreen() }
+            composable(Routes.TEAM_WORKSPACE) { TeamWorkspaceScreen() }
+            composable(Routes.PUBLIC_JAMS) { PublicJamsScreen() }
+            composable(Routes.ROADMAP_GENERATOR) { RoadmapGeneratorScreen() }
+            composable(Routes.OFFLINE_TERMINAL) { OfflineTerminalScreen() }
         }
     }
 }

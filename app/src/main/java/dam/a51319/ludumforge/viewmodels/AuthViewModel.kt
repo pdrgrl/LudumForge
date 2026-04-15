@@ -1,0 +1,54 @@
+package dam.a51319.ludumforge.viewmodels
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dam.a51319.ludumforge.data.repositories.AuthRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+sealed class AuthUiState {
+    object Idle : AuthUiState()
+    object Loading : AuthUiState()
+    object Success : AuthUiState()
+    data class Error(val message: String) : AuthUiState()
+}
+
+class AuthViewModel(private val repository: AuthRepository = AuthRepository()) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    fun login(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
+            _uiState.value = AuthUiState.Error("Fields cannot be empty")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            repository.signIn(email, password)
+                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Login failed") }
+        }
+    }
+
+    fun register(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
+            _uiState.value = AuthUiState.Error("Fields cannot be empty")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            repository.signUp(email, password)
+                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Registration failed") }
+        }
+    }
+
+    fun resetState() {
+        _uiState.value = AuthUiState.Idle
+    }
+}
