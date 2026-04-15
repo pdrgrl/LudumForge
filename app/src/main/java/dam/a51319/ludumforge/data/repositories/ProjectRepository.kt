@@ -9,14 +9,12 @@ import kotlinx.coroutines.tasks.await
 
 class ProjectRepository {
 
-    private val firestore = FirebaseFirestore.getInstance()
-    private val projectsCollection = firestore.collection("projects")
-
     /**
      * Creates a new project document in Firestore.
      */
     suspend fun createProject(project: Project): Result<Unit> {
         return try {
+            val projectsCollection = FirebaseFirestore.getInstance().collection("projects")
             // Uses the project.id as the document ID
             projectsCollection.document(project.id).set(project).await()
             Result.success(Unit)
@@ -32,6 +30,7 @@ class ProjectRepository {
      */
     suspend fun getProjectsByUser(userId: String): Result<List<Project>> {
         return try {
+            val projectsCollection = FirebaseFirestore.getInstance().collection("projects")
             val snapshot = projectsCollection
                 // .whereArrayContains("membersList", userId) // Uncomment when your data structure links users to projects
                 .get()
@@ -49,6 +48,13 @@ class ProjectRepository {
      * Returns a Flow that emits a new Project object every time the document changes on the server.
      */
     fun listenToProject(projectId: String): Flow<Project?> = callbackFlow {
+        val projectsCollection = try {
+            FirebaseFirestore.getInstance().collection("projects")
+        } catch (e: Exception) {
+            close(e)
+            return@callbackFlow
+        }
+
         val listenerRegistration = projectsCollection.document(projectId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {

@@ -6,13 +6,15 @@ import kotlinx.coroutines.tasks.await
 
 class AuthRepository {
 
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-
     /**
      * Gets the currently logged-in user, or null if no one is logged in.
      */
     fun getCurrentUser(): FirebaseUser? {
-        return auth.currentUser
+        return try {
+            FirebaseAuth.getInstance().currentUser
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**
@@ -20,6 +22,7 @@ class AuthRepository {
      */
     suspend fun signIn(email: String, password: String): Result<FirebaseUser> {
         return try {
+            val auth = FirebaseAuth.getInstance()
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val user = result.user ?: throw Exception("User data is null after sign in.")
             Result.success(user)
@@ -33,6 +36,7 @@ class AuthRepository {
      */
     suspend fun signUp(email: String, password: String): Result<FirebaseUser> {
         return try {
+            val auth = FirebaseAuth.getInstance()
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user ?: throw Exception("User data is null after sign up.")
             Result.success(user)
@@ -45,6 +49,10 @@ class AuthRepository {
      * Signs out the current user.
      */
     fun signOut() {
-        auth.signOut()
+        try {
+            FirebaseAuth.getInstance().signOut()
+        } catch (_: Exception) {
+            // Ignore when Firebase is unavailable; this keeps the app from crashing at startup.
+        }
     }
 }

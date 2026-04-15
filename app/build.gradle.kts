@@ -10,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dam.a5139.ludumforge"
+        applicationId = "dam.a51319.ludumforge"
         minSdk = 29
         targetSdk = 36
         versionCode = 1

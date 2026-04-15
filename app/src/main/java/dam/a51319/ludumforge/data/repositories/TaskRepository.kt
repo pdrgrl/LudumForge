@@ -10,13 +10,12 @@ import kotlinx.coroutines.tasks.await
 
 class TaskRepository {
 
-    private val firestore = FirebaseFirestore.getInstance()
-
     /**
      * Adds a task to a specific project's sub-collection: projects/{projectId}/tasks/{taskId}
      */
     suspend fun addTask(task: Task): Result<Unit> {
         return try {
+            val firestore = FirebaseFirestore.getInstance()
             firestore.collection("projects")
                 .document(task.projectId)
                 .collection("tasks")
@@ -35,6 +34,7 @@ class TaskRepository {
      */
     suspend fun updateTaskStatus(projectId: String, taskId: String, newStatus: TaskStatus): Result<Unit> {
         return try {
+            val firestore = FirebaseFirestore.getInstance()
             firestore.collection("projects")
                 .document(projectId)
                 .collection("tasks")
@@ -52,6 +52,13 @@ class TaskRepository {
      * Automatically emits a new list of Tasks whenever anyone in the team adds, edits, or deletes a task.
      */
     fun listenToTasks(projectId: String): Flow<List<Task>> = callbackFlow {
+        val firestore = try {
+            FirebaseFirestore.getInstance()
+        } catch (e: Exception) {
+            close(e)
+            return@callbackFlow
+        }
+
         val listenerRegistration = firestore.collection("projects")
             .document(projectId)
             .collection("tasks")
