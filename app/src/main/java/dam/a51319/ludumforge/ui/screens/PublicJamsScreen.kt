@@ -32,7 +32,7 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PublicJams() {
+fun PublicJamsScreen() {
     // Dummy Data mapped to your Project model
     val dummyJams = listOf(
         Project("j1", "Cyberpunk Jam 2026", "High Tech, Low Life", Date(), Date(), 4, ProjectStatus.ACTIVE),
@@ -78,45 +78,45 @@ fun PublicJams() {
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = SurfaceContainerLowest,
-                contentColor = SecondaryGray,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
-                    label = { Text("Project Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = SecondaryGray,
-                        unselectedTextColor = SecondaryGray
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
-                    label = { Text("Team Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = SecondaryGray,
-                        unselectedTextColor = SecondaryGray
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Explore, contentDescription = "Explore") },
-                    label = { Text("Explore Jams", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = true,
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = SurfaceContainerHigh,
-                        selectedIconColor = PrimaryBlack,
-                        selectedTextColor = PrimaryBlack
-                    ),
-                    onClick = { /* TODO */ }
-                )
-            }
-        },
+//        bottomBar = {
+//            NavigationBar(
+//                containerColor = SurfaceContainerLowest,
+//                contentColor = SecondaryGray,
+//                tonalElevation = 8.dp
+//            ) {
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
+//                    label = { Text("Project Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = false,
+//                    onClick = { /* TODO */ },
+//                    colors = NavigationBarItemDefaults.colors(
+//                        unselectedIconColor = SecondaryGray,
+//                        unselectedTextColor = SecondaryGray
+//                    )
+//                )
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
+//                    label = { Text("Team Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = false,
+//                    onClick = { /* TODO */ },
+//                    colors = NavigationBarItemDefaults.colors(
+//                        unselectedIconColor = SecondaryGray,
+//                        unselectedTextColor = SecondaryGray
+//                    )
+//                )
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.Default.Explore, contentDescription = "Explore") },
+//                    label = { Text("Explore Jams", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = true,
+//                    colors = NavigationBarItemDefaults.colors(
+//                        indicatorColor = SurfaceContainerHigh,
+//                        selectedIconColor = PrimaryBlack,
+//                        selectedTextColor = PrimaryBlack
+//                    ),
+//                    onClick = { /* TODO */ }
+//                )
+//            }
+//        },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(
@@ -378,8 +378,8 @@ fun JamCard(jam: Project) {
 
 @Preview(showBackground = true, backgroundColor = 0xFFF9F9F9)
 @Composable
-fun PublicJamsPreview() {
+fun PublicJamsScreenPreview() {
     LudumForgeTheme {
-        PublicJams()
+        PublicJamsScreen()
     }
 }

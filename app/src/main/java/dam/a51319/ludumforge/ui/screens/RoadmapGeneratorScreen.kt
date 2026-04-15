@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.*
@@ -19,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -28,7 +26,7 @@ import dam.a51319.ludumforge.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoadmapGenerator() {
+fun RoadmapGeneratorScreen() {
     var projectVision by remember { mutableStateOf("") }
     var teamSize by remember { mutableStateOf("") }
     var projectHorizon by remember { mutableStateOf("") }
@@ -67,45 +65,45 @@ fun RoadmapGenerator() {
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = SurfaceContainerLowest,
-                contentColor = SecondaryGray,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
-                    label = { Text("Project Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = SecondaryGray,
-                        unselectedTextColor = SecondaryGray
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
-                    label = { Text("Team Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = SecondaryGray,
-                        unselectedTextColor = SecondaryGray
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.AutoMirrored.Filled.AltRoute, contentDescription = "Roadmap") },
-                    label = { Text("Roadmap", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = true,
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = SurfaceContainerHigh,
-                        selectedIconColor = PrimaryBlack,
-                        selectedTextColor = PrimaryBlack
-                    ),
-                    onClick = { /* TODO */ }
-                )
-            }
-        },
+//        bottomBar = {
+//            NavigationBar(
+//                containerColor = SurfaceContainerLowest,
+//                contentColor = SecondaryGray,
+//                tonalElevation = 8.dp
+//            ) {
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
+//                    label = { Text("Project Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = false,
+//                    onClick = { /* TODO */ },
+//                    colors = NavigationBarItemDefaults.colors(
+//                        unselectedIconColor = SecondaryGray,
+//                        unselectedTextColor = SecondaryGray
+//                    )
+//                )
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
+//                    label = { Text("Team Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = false,
+//                    onClick = { /* TODO */ },
+//                    colors = NavigationBarItemDefaults.colors(
+//                        unselectedIconColor = SecondaryGray,
+//                        unselectedTextColor = SecondaryGray
+//                    )
+//                )
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.AutoMirrored.Filled.AltRoute, contentDescription = "Roadmap") },
+//                    label = { Text("Roadmap", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = true,
+//                    colors = NavigationBarItemDefaults.colors(
+//                        indicatorColor = SurfaceContainerHigh,
+//                        selectedIconColor = PrimaryBlack,
+//                        selectedTextColor = PrimaryBlack
+//                    ),
+//                    onClick = { /* TODO */ }
+//                )
+//            }
+//        },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(
@@ -323,8 +321,8 @@ fun ProtocolStep(number: String, description: String) {
 
 @Preview(showBackground = true)
 @Composable
-fun RoadmapGeneratorPreview() {
+fun RoadmapGeneratorScreenPreview() {
     LudumForgeTheme {
-        RoadmapGenerator()
+        RoadmapGeneratorScreen()
     }
 }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.*
@@ -30,7 +29,7 @@ import dam.a51319.ludumforge.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeamWorkspace() {
+fun TeamWorkspaceScreen() {
     val dummyUsers = listOf(
         User("u1", "JD", "jd@test.com", UserRole.DEVELOPER),
         User("u2", "AK", "ak@test.com", UserRole.ARTIST),
@@ -83,47 +82,47 @@ fun TeamWorkspace() {
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = SurfaceContainerLowest,
-                contentColor = SecondaryGray,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
-                    label = { Text("Project Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = SecondaryGray,
-                        unselectedTextColor = SecondaryGray
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
-                    label = { Text("Team Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = true,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = SurfaceContainerHigh,
-                        selectedIconColor = PrimaryBlack,
-                        selectedTextColor = PrimaryBlack,
-                        unselectedIconColor = SecondaryGray,
-                        unselectedTextColor = SecondaryGray
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.AutoMirrored.Filled.AltRoute, contentDescription = "Roadmap") },
-                    label = { Text("Roadmap", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = SecondaryGray,
-                        unselectedTextColor = SecondaryGray
-                    )
-                )
-            }
-        },
+//        bottomBar = {
+//            NavigationBar(
+//                containerColor = SurfaceContainerLowest,
+//                contentColor = SecondaryGray,
+//                tonalElevation = 8.dp
+//            ) {
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
+//                    label = { Text("Project Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = false,
+//                    onClick = { /* TODO */ },
+//                    colors = NavigationBarItemDefaults.colors(
+//                        unselectedIconColor = SecondaryGray,
+//                        unselectedTextColor = SecondaryGray
+//                    )
+//                )
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
+//                    label = { Text("Team Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = true,
+//                    onClick = { /* TODO */ },
+//                    colors = NavigationBarItemDefaults.colors(
+//                        indicatorColor = SurfaceContainerHigh,
+//                        selectedIconColor = PrimaryBlack,
+//                        selectedTextColor = PrimaryBlack,
+//                        unselectedIconColor = SecondaryGray,
+//                        unselectedTextColor = SecondaryGray
+//                    )
+//                )
+//                NavigationBarItem(
+//                    icon = { Icon(Icons.AutoMirrored.Filled.AltRoute, contentDescription = "Roadmap") },
+//                    label = { Text("Roadmap", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+//                    selected = false,
+//                    onClick = { /* TODO */ },
+//                    colors = NavigationBarItemDefaults.colors(
+//                        unselectedIconColor = SecondaryGray,
+//                        unselectedTextColor = SecondaryGray
+//                    )
+//                )
+//            }
+//        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { /* TODO */ },
@@ -334,8 +333,8 @@ fun TaskCard(task: Task, allUsers: List<User>) {
 
 @Preview(showBackground = true, backgroundColor = 0xFFF9F9F9)
 @Composable
-fun TeamWorkspacePreview() {
+fun TeamWorkspaceScreenPreview() {
     LudumForgeTheme {
-        TeamWorkspace()
+        TeamWorkspaceScreen()
     }
 }
