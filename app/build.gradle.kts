@@ -7,11 +7,7 @@ plugins {
 
 android {
     namespace = "dam.a51319.ludumforge"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dam.a5139.ludumforge"
@@ -72,8 +68,8 @@ dependencies {
     // CRITICAL: This allows the use of .await() on Firebase Tasks
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
-    // Room (Ensure these are still present)
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 }
