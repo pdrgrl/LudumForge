@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.content.Context
 
 sealed class AuthUiState {
     object Idle : AuthUiState()
@@ -46,7 +47,20 @@ class AuthViewModel : ViewModel() {
             _uiState.value = AuthUiState.Loading
             repository.signUp(email, password)
                 .onSuccess { _uiState.value = AuthUiState.Success }
-                .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Registration failed") }
+                .onFailure {
+                    _uiState.value = AuthUiState.Error(it.message ?: "Registration failed")
+                }
+        }
+    }
+
+    fun loginWithGoogle(context: Context, webClientId: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            repository.signInWithGoogle(context, webClientId)
+                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onFailure {
+                    _uiState.value = AuthUiState.Error(it.message ?: "Google sign-in failed")
+                }
         }
     }
 

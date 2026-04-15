@@ -3,6 +3,12 @@ package dam.a51319.ludumforge.data.repositories
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.tasks.await
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import android.content.Context
+import com.google.firebase.auth.GoogleAuthProvider
 
 class AuthRepository {
 
@@ -55,4 +61,34 @@ class AuthRepository {
             // Ignore when Firebase is unavailable; this keeps the app from crashing at startup.
         }
     }
+
+    suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser> {
+        return try {
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false) // show all accounts, not just previously used
+                .setServerClientId(webClientId)
+                .build()
+
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+
+            val credentialManager = CredentialManager.create(context)
+            val response = credentialManager.getCredential(context, request)
+            val credential = response.credential
+
+            val googleIdToken = GoogleIdTokenCredential
+                .createFrom(credential.data)
+                .idToken
+
+            val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
+            val auth = FirebaseAuth.getInstance()
+            val result = auth.signInWithCredential(firebaseCredential).await()
+            val user = result.user ?: throw Exception("Google sign-in returned null user")
+            Result.success(user)
+        } catch (e: Exception) {
+            Result.failure(e)
+
+        }
+        }
 }
