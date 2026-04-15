@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "528605238592",
+    "project_id": "ludumforge",
+    "storage_bucket": "ludumforge.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528605238592:android:95e7edd194f84a369796a5",
+        "android_client_info": {
+          "package_name": "dam.a51319.ludumforge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJtsLwLzsZOcJc6Telc5q_JhSPDeA6UX0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
