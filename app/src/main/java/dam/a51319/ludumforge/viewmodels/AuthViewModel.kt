@@ -58,9 +58,7 @@ class AuthViewModel : ViewModel() {
             _uiState.value = AuthUiState.Loading
             repository.signInWithGoogle(context, webClientId)
                 .onSuccess { _uiState.value = AuthUiState.Success }
-                .onFailure {
-                    _uiState.value = AuthUiState.Error(it.message ?: "Google sign-in failed")
-                }
+                .onFailure { _uiState.value = AuthUiState.Error(it.localizedMessage ?: "Google sign-in failed") }
         }
     }
 

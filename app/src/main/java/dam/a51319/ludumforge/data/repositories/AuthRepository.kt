@@ -1,72 +1,50 @@
 package dam.a51319.ludumforge.data.repositories
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.tasks.await
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
-import android.content.Context
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 class AuthRepository {
 
-    /**
-     * Gets the currently logged-in user, or null if no one is logged in.
-     */
-    fun getCurrentUser(): FirebaseUser? {
-        return try {
-            FirebaseAuth.getInstance().currentUser
-        } catch (_: Exception) {
-            null
-        }
-    }
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
-    /**
-     * Signs in an existing user with email and password.
-     */
+    fun getCurrentUser(): FirebaseUser? = try { auth.currentUser } catch (_: Exception) { null }
+
     suspend fun signIn(email: String, password: String): Result<FirebaseUser> {
         return try {
-            val auth = FirebaseAuth.getInstance()
             val result = auth.signInWithEmailAndPassword(email, password).await()
-            val user = result.user ?: throw Exception("User data is null after sign in.")
-            Result.success(user)
+            Result.success(result.user!!)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Registers a new user with email and password.
-     */
     suspend fun signUp(email: String, password: String): Result<FirebaseUser> {
         return try {
-            val auth = FirebaseAuth.getInstance()
             val result = auth.createUserWithEmailAndPassword(email, password).await()
-            val user = result.user ?: throw Exception("User data is null after sign up.")
+            val user = result.user!!
+            // Default username to the part of the email before the @
+            saveUserToFirestore(user, username = email.substringBefore("@"))
             Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)
-        }
-    }
-
-    /**
-     * Signs out the current user.
-     */
-    fun signOut() {
-        try {
-            FirebaseAuth.getInstance().signOut()
-        } catch (_: Exception) {
-            // Ignore when Firebase is unavailable; this keeps the app from crashing at startup.
         }
     }
 
     suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser> {
         return try {
             val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false) // show all accounts, not just previously used
+                .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(webClientId)
+//                .setAutoSelectEnabled(true)
                 .build()
 
             val request = GetCredentialRequest.Builder()
@@ -75,20 +53,36 @@ class AuthRepository {
 
             val credentialManager = CredentialManager.create(context)
             val response = credentialManager.getCredential(context, request)
-            val credential = response.credential
 
-            val googleIdToken = GoogleIdTokenCredential
-                .createFrom(credential.data)
-                .idToken
-
+            val googleIdToken = GoogleIdTokenCredential.createFrom(response.credential.data).idToken
             val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-            val auth = FirebaseAuth.getInstance()
+
             val result = auth.signInWithCredential(firebaseCredential).await()
-            val user = result.user ?: throw Exception("Google sign-in returned null user")
+            val user = result.user!!
+
+            // Only write to Firestore if this is a brand-new Google account signup
+            if (result.additionalUserInfo?.isNewUser == true) {
+                saveUserToFirestore(user, username = user.displayName ?: "New User")
+            }
+
             Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
 
-        }
-        }
+    private suspend fun saveUserToFirestore(user: FirebaseUser, username: String) {
+        val userMap = hashMapOf(
+            "id" to user.uid,
+            "email" to (user.email ?: ""),
+            "username" to username,
+            "role" to "DEVELOPER" // Default role
+        )
+        // Save to "users" collection using the UID as the document ID
+        db.collection("users").document(user.uid).set(userMap).await()
+    }
+
+    fun signOut() {
+        try { auth.signOut() } catch (_: Exception) {}
+    }
 }

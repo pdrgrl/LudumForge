@@ -25,6 +25,7 @@ import dam.a51319.ludumforge.ui.screens.PublicJamsScreen
 import dam.a51319.ludumforge.ui.screens.RegisterScreen
 import dam.a51319.ludumforge.ui.screens.RoadmapGeneratorScreen
 import dam.a51319.ludumforge.ui.screens.TeamWorkspaceScreen
+import com.google.firebase.auth.FirebaseAuth
 
 object Routes {
     const val LOGIN = "login"
@@ -42,6 +43,10 @@ fun AppNavigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val startDest = if (currentUser != null) Routes.PERSONAL_DASHBOARD else Routes.LOGIN
+
+
     Scaffold(
         bottomBar = {
             val mainTabs = listOf(
@@ -53,10 +58,10 @@ fun AppNavigation() {
                 LudumForgeBottomBar(navController = navController, currentRoute = currentRoute)
             }
         }
-    )  { innerPadding ->
+    ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.LOGIN, // Start here
+            startDestination = startDest, // Use the dynamic variable here!
             modifier = Modifier.padding(innerPadding)
         ) {
             // AUTH ROUTES

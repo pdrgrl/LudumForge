@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.BlurOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,6 +48,7 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0F0F0F)) // Midnight Vellum Base
+            .safeDrawingPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -130,18 +132,17 @@ fun LoginScreen(
 
         OutlinedButton(
             onClick = { viewModel.loginWithGoogle(context, webClientId) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
         ) {
+            // Using default icon if you haven't added the Google drawable yet
             Icon(
-                painter = painterResource(id = R.drawable.ic_google), // add a Google SVG to drawable
+                imageVector = Icons.Default.AccountCircle,
                 contentDescription = "Google",
                 modifier = Modifier.size(20.dp),
-                tint = Color.Unspecified
+                tint = Color.White
             )
             Spacer(Modifier.width(12.dp))
             Text("CONTINUE WITH GOOGLE", fontWeight = FontWeight.Bold, fontSize = 13.sp)
