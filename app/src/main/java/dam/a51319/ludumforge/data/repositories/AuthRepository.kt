@@ -87,7 +87,9 @@ class AuthRepository {
     suspend fun getUserProfile(): User? {
         val firebaseUser = auth.currentUser ?: return null
         return try {
-            val snapshot = db.collection("users").document(firebaseUser.uid).get().await()
+            val docRef = db.collection("users").document(firebaseUser.uid)
+            val snapshot = docRef.get().await()
+
             if (snapshot.exists()) {
                 User(
                     id = snapshot.getString("id") ?: firebaseUser.uid,
@@ -95,7 +97,27 @@ class AuthRepository {
                     email = snapshot.getString("email") ?: firebaseUser.email ?: "",
                     role = UserRole.valueOf(snapshot.getString("role") ?: "DEVELOPER")
                 )
-            } else null
+            } else {
+                // Document doesn't exist (e.g., old Google login). Create it now!
+                val email = firebaseUser.email ?: ""
+                val defaultUsername = if (email.contains("@")) email.substringBefore("@") else "Architect"
+
+                val newUser = User(
+                    id = firebaseUser.uid,
+                    username = defaultUsername,
+                    email = email,
+                    role = UserRole.DEVELOPER
+                )
+
+                val userMap = hashMapOf(
+                    "id" to newUser.id,
+                    "email" to newUser.email,
+                    "username" to newUser.username,
+                    "role" to newUser.role.name
+                )
+                docRef.set(userMap).await()
+                newUser
+            }
         } catch (e: Exception) {
             null
         }
