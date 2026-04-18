@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "528605238592-s2br3hoc7v2m40gm4ju8u2o8rqfvdp21.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dam.a51319.ludumforge",
+            "certificate_hash": "cfdd2ff8844612d3adffe910480bf50188110a5d"
+          }
+        },
+        {
           "client_id": "528605238592-ia3mc3v97js8l9mf0d5m43f0tu1f315j.apps.googleusercontent.com",
           "client_type": 3
         }
