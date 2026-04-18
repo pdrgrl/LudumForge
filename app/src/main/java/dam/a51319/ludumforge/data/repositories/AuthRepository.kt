@@ -10,6 +10,8 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import dam.a51319.ludumforge.models.User
+import dam.a51319.ludumforge.models.UserRole
 
 class AuthRepository {
 
@@ -81,6 +83,24 @@ class AuthRepository {
         // Save to "users" collection using the UID as the document ID
         db.collection("users").document(user.uid).set(userMap).await()
     }
+
+    suspend fun getUserProfile(): User? {
+        val firebaseUser = auth.currentUser ?: return null
+        return try {
+            val snapshot = db.collection("users").document(firebaseUser.uid).get().await()
+            if (snapshot.exists()) {
+                User(
+                    id = snapshot.getString("id") ?: firebaseUser.uid,
+                    username = snapshot.getString("username") ?: "Unknown",
+                    email = snapshot.getString("email") ?: firebaseUser.email ?: "",
+                    role = UserRole.valueOf(snapshot.getString("role") ?: "DEVELOPER")
+                )
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 
     fun signOut() {
         try { auth.signOut() } catch (_: Exception) {}

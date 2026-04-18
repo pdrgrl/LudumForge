@@ -11,8 +11,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dam.a51319.ludumforge.data.repositories.AuthRepository
+import dam.a51319.ludumforge.models.User
 
 class PersonalDashboardViewModel : ViewModel() {
+
+
+    private val authRepo = AuthRepository()
+
+    // Hold the fetched user profile
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     // Timer State: Representing seconds left in the Game Jam
     private val _timeLeftInSeconds = MutableStateFlow(48 * 3600L) // 48 Hours
@@ -23,8 +32,15 @@ class PersonalDashboardViewModel : ViewModel() {
     val myTasks: StateFlow<List<Task>> = _myTasks.asStateFlow()
 
     init {
+        fetchUserProfile()
         loadMyTasks()
         startTimer()
+    }
+
+    private fun fetchUserProfile() {
+        viewModelScope.launch {
+            _currentUser.value = authRepo.getUserProfile()
+        }
     }
 
     private fun loadMyTasks() {

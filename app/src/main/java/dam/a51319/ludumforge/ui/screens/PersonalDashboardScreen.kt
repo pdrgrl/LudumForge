@@ -30,13 +30,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dam.a51319.ludumforge.models.*
 import dam.a51319.ludumforge.ui.theme.*
+import dam.a51319.ludumforge.viewmodels.AuthViewModel
 import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PersonalDashboardScreen(viewModel: PersonalDashboardViewModel = viewModel()) {
-
+fun PersonalDashboardScreen(
+    viewModel: PersonalDashboardViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
+    onLogout: () -> Unit
+) {
+    val currentUser by viewModel.currentUser.collectAsState()
+    var showMenu by remember { mutableStateOf(false) }
     // State Collection
     val timeLeft by viewModel.timeLeftInSeconds.collectAsState()
     val priorityTasks by viewModel.myTasks.collectAsState()
@@ -60,8 +66,35 @@ fun PersonalDashboardScreen(viewModel: PersonalDashboardViewModel = viewModel())
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Outlined.AccountCircle, contentDescription = "Profile", tint = PrimaryBlack)
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Outlined.AccountCircle, contentDescription = "Profile", tint = PrimaryBlack)
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(SurfaceContainerLowest)
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = currentUser?.username ?: "Loading...",
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryBlack
+                                    )
+                                },
+                                onClick = { showMenu = false }
+                            )
+                            HorizontalDivider(color = GhostBorder)
+                            DropdownMenuItem(
+                                text = { Text("Sign Out", color = ErrorRed) },
+                                onClick = {
+                                    showMenu = false
+                                    authViewModel.logout()
+                                    onLogout()
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceBase.copy(alpha = 0.9f))

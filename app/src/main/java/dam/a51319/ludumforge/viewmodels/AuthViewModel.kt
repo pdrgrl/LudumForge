@@ -37,6 +37,11 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    fun logout() {
+        repository.signOut()
+        _uiState.value = AuthUiState.Idle // Reset state so next login is fresh
+    }
+
     fun register(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
             _uiState.value = AuthUiState.Error("Fields cannot be empty")

@@ -87,7 +87,16 @@ fun AppNavigation() {
             }
 
             // APP ROUTES
-            composable(Routes.PERSONAL_DASHBOARD) { PersonalDashboardScreen() }
+            composable(Routes.PERSONAL_DASHBOARD) {
+                PersonalDashboardScreen(
+                    onLogout = {
+                        navController.navigate(Routes.LOGIN) {
+                            // Clear the entire navigation history so the user can't press 'Back' to return
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable(Routes.TEAM_WORKSPACE) { TeamWorkspaceScreen() }
             composable(Routes.PUBLIC_JAMS) { PublicJamsScreen() }
             composable(Routes.ROADMAP_GENERATOR) { RoadmapGeneratorScreen() }
