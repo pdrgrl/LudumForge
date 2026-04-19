@@ -27,14 +27,26 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dam.a51319.ludumforge.models.*
 import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.TeamWorkspaceViewModel
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
-
-    // State Collection
     val teamTasks by viewModel.teamTasks.collectAsState()
     val groupedTasks = teamTasks.groupBy { it.status }
+
+    // State for the Bottom Sheet
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    // Form states
+    var newTaskTitle by remember { mutableStateOf("") }
+    var newTaskMinutes by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf(TaskCategory.CODE) }
 
     val dummyUsers = listOf(
         User("u1", "JD", "jd@test.com", UserRole.DEVELOPER),
@@ -47,6 +59,17 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     )
 
     Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showBottomSheet = true },
+                containerColor = PrimaryBlack,
+                contentColor = SurfaceContainerLowest,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            ) {
+                Icon(Icons.Default.AddTask, contentDescription = "Add Task")
+            }
+        },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(
@@ -89,6 +112,83 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { ColumnHeader("DONE", groupedTasks[TaskStatus.DONE]?.size ?: 0) }
             items(groupedTasks[TaskStatus.DONE] ?: emptyList()) { task -> TaskCard(task, dummyUsers) }
+        }
+    }
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            sheetState = sheetState,
+            containerColor = SurfaceBase
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                Text("Create New Task", style = MaterialTheme.typography.titleLarge, color = PrimaryBlack, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedTextField(
+                    value = newTaskTitle,
+                    onValueChange = { newTaskTitle = it },
+                    label = { Text("Task Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlack,
+                        focusedLabelColor = PrimaryBlack,
+                        unfocusedBorderColor = GhostBorder
+                    )
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = newTaskMinutes,
+                    onValueChange = { newTaskMinutes = it },
+                    label = { Text("Estimated Minutes") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlack,
+                        focusedLabelColor = PrimaryBlack,
+                        unfocusedBorderColor = GhostBorder
+                    )
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Simple Category Picker
+                Text("Category", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TaskCategory.values().forEach { category ->
+                        FilterChip(
+                            selected = category == selectedCategory,
+                            onClick = { selectedCategory = category },
+                            label = { Text(category.name) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryBlack,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = {
+                        viewModel.addTask(newTaskTitle, selectedCategory, newTaskMinutes.toIntOrNull() ?: 60)
+                        showBottomSheet = false
+                        newTaskTitle = ""
+                        newTaskMinutes = ""
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                ) {
+                    Text("Forge Task", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }

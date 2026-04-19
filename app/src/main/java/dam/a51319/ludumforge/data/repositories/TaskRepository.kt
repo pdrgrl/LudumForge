@@ -53,4 +53,21 @@ class TaskRepository {
             e.printStackTrace()
         }
     }
+
+    suspend fun addTask(projectId: String, title: String, category: TaskCategory, estimatedMinutes: Int) {
+        try {
+            val newTask = hashMapOf(
+                "projectId" to projectId,
+                "title" to title,
+                "category" to category.name,
+                "status" to TaskStatus.TODO.name, // All new tasks start in TODO
+                "estimatedMinutes" to estimatedMinutes,
+                "assignedTo" to null // Unassigned by default
+            )
+            // Add to the 'tasks' collection. Firestore will auto-generate the document ID.
+            db.collection("tasks").add(newTask).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

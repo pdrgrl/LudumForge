@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dam.a51319.ludumforge.data.repositories.TaskRepository
 import dam.a51319.ludumforge.models.Task
+import dam.a51319.ludumforge.models.TaskCategory
 import dam.a51319.ludumforge.models.TaskStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,15 @@ class TeamWorkspaceViewModel : ViewModel() {
             // Updates Firestore. The snapshot listener will automatically
             // trigger and update the UI!
             taskRepository.updateTaskStatus(taskId, newStatus)
+        }
+    }
+
+    fun addTask(title: String, category: TaskCategory, estimatedMinutes: Int) {
+        if (title.isBlank()) return
+
+        viewModelScope.launch {
+            // Using the hardcoded 'p1' for now.
+            taskRepository.addTask(activeProjectId, title, category, estimatedMinutes)
         }
     }
 }
