@@ -36,6 +36,8 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
 
     // State Collection
     val dummyJams by viewModel.publicJams.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
@@ -90,6 +92,14 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            item {
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = PrimaryBlack)
+                    }
+                }
+            }
+
             items(dummyJams) { jam ->
                 JamCard(jam = jam)
             }
@@ -115,7 +125,7 @@ fun JamCard(jam: Project) {
         ProjectStatus.PLANNING -> "Starts in 3 days"
         else -> "Ended"
     }
-    val participants = if (jam.name.contains("Cyberpunk")) "1,204" else if (jam.name.contains("Cozy")) "842" else "3,510"
+    val participants = jam.teamSize.toString()
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp).shadow(elevation = 6.dp, shape = RoundedCornerShape(16.dp), spotColor = PrimaryBlack.copy(alpha = 0.08f)).clickable { /* TODO */ },
