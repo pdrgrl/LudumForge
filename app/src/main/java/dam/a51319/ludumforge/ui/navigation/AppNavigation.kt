@@ -3,8 +3,10 @@ package dam.a51319.ludumforge.ui.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Architecture
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -69,8 +71,10 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
         bottomBar = {
             val mainTabs = listOf(
                 Routes.PERSONAL_DASHBOARD,
+                Routes.ROADMAP_GENERATOR,
                 Routes.TEAM_WORKSPACE,
-                Routes.PUBLIC_JAMS
+                Routes.PUBLIC_JAMS,
+                Routes.OFFLINE_TERMINAL
             )
             if (currentRoute in mainTabs) {
                 LudumForgeBottomBar(navController = navController, currentRoute = currentRoute)
@@ -125,27 +129,21 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
 
 @Composable
 fun LudumForgeBottomBar(navController: NavHostController, currentRoute: String?) {
-    // Theming mappings based on Architect's Vellum
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryGray = MaterialTheme.colorScheme.secondary
     val surfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
 
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.onPrimary, // SurfaceContainerLowest
+        containerColor = MaterialTheme.colorScheme.onPrimary,
         contentColor = secondaryGray,
         tonalElevation = 8.dp
     ) {
+        // 1. Planning (Personal Dashboard)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
             label = { Text("Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.PERSONAL_DASHBOARD,
-            onClick = {
-                navController.navigate(Routes.PERSONAL_DASHBOARD) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
+            onClick = { navigateToTab(navController, Routes.PERSONAL_DASHBOARD) },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = surfaceContainerHigh,
                 selectedIconColor = primaryColor,
@@ -154,17 +152,12 @@ fun LudumForgeBottomBar(navController: NavHostController, currentRoute: String?)
                 unselectedTextColor = secondaryGray
             )
         )
+        // 2. Workspace (Team Workspace)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
             label = { Text("Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.TEAM_WORKSPACE,
-            onClick = {
-                navController.navigate(Routes.TEAM_WORKSPACE) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
+            onClick = { navigateToTab(navController, Routes.TEAM_WORKSPACE) },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = surfaceContainerHigh,
                 selectedIconColor = primaryColor,
@@ -173,17 +166,26 @@ fun LudumForgeBottomBar(navController: NavHostController, currentRoute: String?)
                 unselectedTextColor = secondaryGray
             )
         )
+        // 3. AI Roadmap
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "Roadmap") },
+            label = { Text("AI Roadmap", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+            selected = currentRoute == Routes.ROADMAP_GENERATOR,
+            onClick = { navigateToTab(navController, Routes.ROADMAP_GENERATOR) },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = surfaceContainerHigh,
+                selectedIconColor = primaryColor,
+                selectedTextColor = primaryColor,
+                unselectedIconColor = secondaryGray,
+                unselectedTextColor = secondaryGray
+            )
+        )
+        // 4. Explore (Public Jams)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = "Explore") },
             label = { Text("Explore", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.PUBLIC_JAMS,
-            onClick = {
-                navController.navigate(Routes.PUBLIC_JAMS) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
+            onClick = { navigateToTab(navController, Routes.PUBLIC_JAMS) },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = surfaceContainerHigh,
                 selectedIconColor = primaryColor,
@@ -192,5 +194,29 @@ fun LudumForgeBottomBar(navController: NavHostController, currentRoute: String?)
                 unselectedTextColor = secondaryGray
             )
         )
+        // 5. Terminal (Offline Terminal)
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Terminal, contentDescription = "Terminal") },
+            label = { Text("Terminal", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+            selected = currentRoute == Routes.OFFLINE_TERMINAL,
+            onClick = { navigateToTab(navController, Routes.OFFLINE_TERMINAL) },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = surfaceContainerHigh,
+                selectedIconColor = primaryColor,
+                selectedTextColor = primaryColor,
+                unselectedIconColor = secondaryGray,
+                unselectedTextColor = secondaryGray
+            )
+        )
+    }
+}
+
+
+// Helper function to keep the onClick clean
+private fun navigateToTab(navController: NavHostController, route: String) {
+    navController.navigate(route) {
+        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }
