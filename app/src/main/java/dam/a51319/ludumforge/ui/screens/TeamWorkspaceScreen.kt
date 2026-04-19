@@ -103,16 +103,19 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
             }
 
             item { ColumnHeader("TO DO", groupedTasks[TaskStatus.TODO]?.size ?: 0) }
-            items(groupedTasks[TaskStatus.TODO] ?: emptyList()) { task -> TaskCard(task, dummyUsers) }
-
+            items(groupedTasks[TaskStatus.TODO] ?: emptyList()) { task ->
+                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status) }
+            }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { ColumnHeader("IN PROGRESS", groupedTasks[TaskStatus.IN_PROGRESS]?.size ?: 0) }
-            items(groupedTasks[TaskStatus.IN_PROGRESS] ?: emptyList()) { task -> TaskCard(task, dummyUsers) }
-
+            items(groupedTasks[TaskStatus.IN_PROGRESS] ?: emptyList()) { task ->
+                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status) }
+            }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { ColumnHeader("DONE", groupedTasks[TaskStatus.DONE]?.size ?: 0) }
-            items(groupedTasks[TaskStatus.DONE] ?: emptyList()) { task -> TaskCard(task, dummyUsers) }
-        }
+            items(groupedTasks[TaskStatus.DONE] ?: emptyList()) { task ->
+                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status) }
+            }        }
     }
     if (showBottomSheet) {
         ModalBottomSheet(
@@ -212,36 +215,67 @@ fun ColumnHeader(title: String, count: Int) {
 }
 
 @Composable
-fun TaskCard(task: Task, allUsers: List<User>) {
+fun TaskCard(
+    task: Task,
+    allUsers: List<User>,
+    onStatusChange: (String, TaskStatus) -> Unit
+) {
     val isDone = task.status == TaskStatus.DONE
     val isInProgress = task.status == TaskStatus.IN_PROGRESS
     val assigneeIds = task.assignedTo?.split(",") ?: emptyList()
     val assignees = allUsers.filter { assigneeIds.contains(it.id) }
     val contentAlpha = if (isDone) 0.5f else 1f
 
+    // State for the dropdown menu
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
             .shadow(elevation = if (isDone) 0.dp else 4.dp, shape = RoundedCornerShape(12.dp), spotColor = PrimaryBlack.copy(alpha = 0.05f))
-            .clickable { /* TODO */ },
+            .clickable { showMenu = true }, // <--- TRIGGER MENU ON CLICK
         colors = CardDefaults.cardColors(containerColor = if (isDone) SurfaceBase else SurfaceContainerLowest),
         shape = RoundedCornerShape(12.dp),
         border = if (isDone) BorderStroke(1.dp, GhostBorder) else null
     ) {
-        Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-            Text(task.category.name, style = MaterialTheme.typography.labelLarge, color = if (isInProgress) PrimaryBlack else SecondaryGray.copy(alpha = contentAlpha))
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(task.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), textDecoration = if (isDone) TextDecoration.LineThrough else null, color = PrimaryBlack.copy(alpha = contentAlpha))
+        Box { // Wrap content in a Box so the DropdownMenu anchors correctly
+            Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+                Text(task.category.name, style = MaterialTheme.typography.labelLarge, color = if (isInProgress) PrimaryBlack else SecondaryGray.copy(alpha = contentAlpha))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(task.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), textDecoration = if (isDone) TextDecoration.LineThrough else null, color = PrimaryBlack.copy(alpha = contentAlpha))
 
-            if (isInProgress) {
+                if (isInProgress) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    LinearProgressIndicator(progress = { 0.65f }, modifier = Modifier.fillMaxWidth().height(2.dp), color = PrimaryBlack, trackColor = SurfaceContainerHigh)
+                }
+
                 Spacer(modifier = Modifier.height(20.dp))
-                LinearProgressIndicator(progress = { 0.65f }, modifier = Modifier.fillMaxWidth().height(2.dp), color = PrimaryBlack, trackColor = SurfaceContainerHigh)
+                Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+                    assignees.forEach { user ->
+                        Box(modifier = Modifier.size(30.dp).clip(CircleShape).background(SurfaceContainerHigh).border(2.dp, SurfaceContainerLowest, CircleShape), contentAlignment = Alignment.Center) {
+                            Text(user.username, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
-                assignees.forEach { user ->
-                    Box(modifier = Modifier.size(30.dp).clip(CircleShape).background(SurfaceContainerHigh).border(2.dp, SurfaceContainerLowest, CircleShape), contentAlignment = Alignment.Center) {
-                        Text(user.username, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+            // The Status Picker Menu
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                modifier = Modifier.background(SurfaceContainerLowest)
+            ) {
+                Text(" Move to...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SecondaryGray, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                TaskStatus.entries.forEach { status ->
+                    if (status != task.status) { // Only show options that are different from current
+                        DropdownMenuItem(
+                            text = { Text(status.name.replace("_", " ")) },
+                            onClick = {
+                                showMenu = false
+                                onStatusChange(task.id, status)
+                            }
+                        )
                     }
                 }
             }
