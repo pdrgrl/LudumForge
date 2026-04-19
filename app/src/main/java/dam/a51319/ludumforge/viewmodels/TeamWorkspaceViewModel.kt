@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
 
 class TeamWorkspaceViewModel : ViewModel() {
 
@@ -46,8 +47,16 @@ class TeamWorkspaceViewModel : ViewModel() {
         if (title.isBlank()) return
 
         viewModelScope.launch {
-            // Using the hardcoded 'p1' for now.
-            taskRepository.addTask(activeProjectId, title, category, estimatedMinutes)
+            // Get the current user's UID to assign the task to them
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+
+            taskRepository.addTask(
+                projectId = activeProjectId,
+                title = title,
+                category = category,
+                estimatedMinutes = estimatedMinutes,
+                assignedTo = currentUserId // <--- Pass the ID here
+            )
         }
     }
 }

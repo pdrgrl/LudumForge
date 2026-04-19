@@ -54,20 +54,51 @@ class TaskRepository {
         }
     }
 
-    suspend fun addTask(projectId: String, title: String, category: TaskCategory, estimatedMinutes: Int) {
+    suspend fun addTask(
+        projectId: String,
+        title: String,
+        category: TaskCategory,
+        estimatedMinutes: Int,
+        assignedTo: String?
+    ) {
         try {
             val newTask = hashMapOf(
                 "projectId" to projectId,
                 "title" to title,
                 "category" to category.name,
-                "status" to TaskStatus.TODO.name, // All new tasks start in TODO
+                "status" to TaskStatus.TODO.name,
                 "estimatedMinutes" to estimatedMinutes,
-                "assignedTo" to null // Unassigned by default
+                "assignedTo" to assignedTo // Now it saves the User ID!
             )
-            // Add to the 'tasks' collection. Firestore will auto-generate the document ID.
             db.collection("tasks").add(newTask).await()
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    fun getTasksForUser(userId: String): Flow<List<Task>> = callbackFlow {
+        val listener = db.collection("tasks")
+            .whereEqualTo("assignedTo", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    val tasks = snapshot.documents.map { doc ->
+                        Task(
+                            id = doc.id,
+                            projectId = doc.getString("projectId") ?: "",
+                            title = doc.getString("title") ?: "Untitled",
+                            category = TaskCategory.valueOf(doc.getString("category") ?: "CODE"),
+                            assignedTo = doc.getString("assignedTo"),
+                            estimatedMinutes = doc.getLong("estimatedMinutes")?.toInt() ?: 0,
+                            status = TaskStatus.valueOf(doc.getString("status") ?: "TODO")
+                        )
+                    }
+                    trySend(tasks)
+                }
+            }
+        awaitClose { listener.remove() }
     }
 }
