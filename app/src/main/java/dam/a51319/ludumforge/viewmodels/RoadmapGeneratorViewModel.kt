@@ -63,27 +63,43 @@ class RoadmapGeneratorViewModel : ViewModel() {
                 val prompt = """
                     You are an expert Game Producer. I am building a game called '${gameTitle.value}'. 
                     My team has ${teamSize.value} people and we have ${duration.value} to finish.
-                    Generate a project roadmap as a raw JSON array. Do not use markdown blocks.
-                    Format: [{"title": "Setup repository", "category": "CODE", "estimatedMinutes": 60}, ...]
-                    Categories must be exactly one of: CODE, ART, AUDIO, DESIGN, QA, MARKETING.
+                    Generate a project roadmap strictly as a raw JSON array.
+                    Format exactly like this: [{"title": "Setup repository", "category": "CODE", "estimatedMinutes": 60}]
+                    Categories must be EXACTLY one of: CODE, ART, AUDIO, DESIGN, QA.
+                    Do not return a single object. Return an array of objects. Do not include markdown formatting.
                 """.trimIndent()
 
                 val response = generativeModel.generateContent(prompt)
                 val rawText = response.text ?: throw Exception("No response from AI.")
 
-                // Clean the response (Gemini sometimes wraps JSON in ```json ... ```)
-                val cleanJson = rawText.substringAfter("[").substringBeforeLast("]") + "]"
+                // ROBUST JSON EXTRACTION: Find the first '[' and the last ']'
+                val startIndex = rawText.indexOf('[')
+                val endIndex = rawText.lastIndexOf(']')
 
+                if (startIndex == -1 || endIndex == -1 || startIndex > endIndex) {
+                    throw Exception("AI did not return a valid JSON array.")
+                }
+
+                val cleanJson = rawText.substring(startIndex, endIndex + 1)
                 val jsonArray = JSONArray(cleanJson)
                 val generatedTasks = mutableListOf<Task>()
 
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
+
+                    // Safely parse the category with a fallback to CODE
+                    val categoryString = obj.optString("category", "CODE").uppercase()
+                    val safeCategory = try {
+                        TaskCategory.valueOf(categoryString)
+                    } catch (e: Exception) {
+                        TaskCategory.CODE // Fallback if AI hallucinates
+                    }
+
                     val task = Task(
                         id = "ai_${i}",
-                        projectId = "p1", // Hardcoded to current active project for now
+                        projectId = "p1", // Hardcoded to active project
                         title = obj.getString("title"),
-                        category = TaskCategory.valueOf(obj.getString("category")),
+                        category = safeCategory, // <-- Use the safe category
                         estimatedMinutes = obj.getInt("estimatedMinutes"),
                         status = TaskStatus.TODO
                     )
