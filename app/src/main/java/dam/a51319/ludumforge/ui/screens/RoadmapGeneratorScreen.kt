@@ -31,10 +31,24 @@ import dam.a51319.ludumforge.models.TaskStatus
 import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.RoadmapGeneratorViewModel
 import dam.a51319.ludumforge.viewmodels.RoadmapUiState
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import dam.a51319.ludumforge.viewmodels.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoadmapGeneratorScreen(viewModel: RoadmapGeneratorViewModel = viewModel()) {
+fun RoadmapGeneratorScreen(
+    viewModel: RoadmapGeneratorViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel() // To check Premium status
+) {
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+    // Read API Key from SharedPreferences
+    val context = LocalContext.current
+    val sharedPrefs = remember { context.getSharedPreferences("LudumForgePrefs", Context.MODE_PRIVATE) }
+    val savedApiKey = sharedPrefs.getString("gemini_api_key", "") ?: ""
+
+    val isPremium = currentUser?.role?.name == "PREMIUM"
 
     // ViewModel State Collection
     val projectVision by viewModel.gameTitle.collectAsState()
@@ -167,7 +181,10 @@ fun RoadmapGeneratorScreen(viewModel: RoadmapGeneratorViewModel = viewModel()) {
                         .shadow(elevation = 16.dp, shape = RoundedCornerShape(12.dp), spotColor = PrimaryBlack.copy(alpha = 0.2f))
                         .clip(RoundedCornerShape(12.dp))
                         .background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
-                        .clickable { viewModel.onGenerateClicked() }
+                        .clickable {
+                            // Pass the key and premium status here!
+                            viewModel.onGenerateClicked(userApiKey = savedApiKey, isPremium = isPremium)
+                        }
                         .padding(vertical = 18.dp),
                     contentAlignment = Alignment.Center
                 ) {

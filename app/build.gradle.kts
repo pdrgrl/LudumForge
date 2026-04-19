@@ -60,6 +60,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation("org.jsoup:jsoup:1.17.2")
+    implementation("com.google.ai.client.generativeai:generativeai:0.6.0")
+
 
     // Firebase BOM (Bill of Materials) - ensures all firebase libs work together
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
