@@ -40,35 +40,50 @@ class TeamWorkspaceViewModel : ViewModel() {
 
     fun updateTaskStatus(taskId: String, newStatus: TaskStatus, taskTitle: String, context: Context) {
         viewModelScope.launch {
-            // 1. Update the actual task in Firestore
-            taskRepository.updateTaskStatus(taskId, newStatus)
-
-            // 2. Log it to the Dev Log!
+            // 1. Log it to the local Dev Log FIRST! (Immediate offline feedback)
             val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
             val actionRepo = ActionLogRepository(dao)
 
-            // We use the current user's name if we have it, else a generic string
-            val userName = FirebaseAuth.getInstance().currentUser?.displayName ?: "A developer"
-            val logMessage = "$userName moved '$taskTitle' to ${newStatus.name}"
+            // Get the username (defaulting to the first part of the email if displayName is null)
+            val user = FirebaseAuth.getInstance().currentUser
+            val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
 
+            val logMessage = when (newStatus) {
+                TaskStatus.DONE -> "🏁 $userName completed '$taskTitle'"
+                TaskStatus.IN_PROGRESS -> "$userName started '$taskTitle'"
+                TaskStatus.TODO -> "$userName moved '$taskTitle' back to TODO"
+                else -> {"$userName updated '$taskTitle' to ${newStatus.name}"}
+            }
             actionRepo.addSystemEvent(activeProjectId, logMessage)
+
+            // 2. Update Firestore (Firebase will handle its own offline queue internally)
+            try {
+                taskRepository.updateTaskStatus(taskId, newStatus)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
-    fun addTask(title: String, category: TaskCategory, estimatedMinutes: Int) {
+    fun addTask(title: String, category: TaskCategory, estimatedMinutes: Int, context: Context) {
         if (title.isBlank()) return
 
         viewModelScope.launch {
-            // Get the current user's UID to assign the task to them
-            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+            val user = FirebaseAuth.getInstance().currentUser
+            val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
+            val currentUserId = user?.uid
 
-            taskRepository.addTask(
-                projectId = activeProjectId,
-                title = title,
-                category = category,
-                estimatedMinutes = estimatedMinutes,
-                assignedTo = currentUserId // <--- Pass the ID here
-            )
+            // 1. Log FIRST — works offline immediately
+            val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
+            val actionRepo = ActionLogRepository(dao)
+            actionRepo.addSystemEvent(activeProjectId, "$userName forged task '$title' [${category.name}]")
+
+            // 2. Then push to Firestore
+            try {
+                taskRepository.addTask(activeProjectId, title, category, estimatedMinutes, currentUserId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }

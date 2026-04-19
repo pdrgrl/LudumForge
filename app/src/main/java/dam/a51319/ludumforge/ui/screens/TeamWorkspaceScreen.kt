@@ -183,7 +183,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 
                 Button(
                     onClick = {
-                        viewModel.addTask(newTaskTitle, selectedCategory, newTaskMinutes.toIntOrNull() ?: 60)
+                        viewModel.addTask(newTaskTitle, selectedCategory, newTaskMinutes.toIntOrNull() ?: 60, context)
                         showBottomSheet = false
                         newTaskTitle = ""
                         newTaskMinutes = ""

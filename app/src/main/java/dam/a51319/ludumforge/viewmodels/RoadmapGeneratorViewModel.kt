@@ -1,8 +1,13 @@
 package dam.a51319.ludumforge.viewmodels
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.firebase.auth.FirebaseAuth
+import dam.a51319.ludumforge.data.LudumForgeDatabase
+import dam.a51319.ludumforge.data.repositories.ActionLogRepository
 import dam.a51319.ludumforge.data.repositories.TaskRepository
 import dam.a51319.ludumforge.models.Task
 import dam.a51319.ludumforge.models.TaskCategory
@@ -21,7 +26,7 @@ sealed class RoadmapUiState {
     data class Error(val message: String) : RoadmapUiState()
 }
 
-class RoadmapGeneratorViewModel : ViewModel() {
+class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(application) {
 
     private val taskRepository = TaskRepository()
 
@@ -110,6 +115,22 @@ class RoadmapGeneratorViewModel : ViewModel() {
                 }
 
                 _uiState.value = RoadmapUiState.Success(generatedTasks)
+
+                // Log the event to Room immediately
+                try {
+                    val context = getApplication<Application>().applicationContext
+                    val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
+                    val actionRepo = ActionLogRepository(dao)
+                    val user = FirebaseAuth.getInstance().currentUser
+                    val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
+                    actionRepo.addSystemEvent(
+                        "p1",
+                        "$userName generated AI roadmap for '${gameTitle.value}' — ${generatedTasks.size} tasks created"
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
             } catch (e: Exception) {
                 _uiState.value = RoadmapUiState.Error("AI Generation Failed: ${e.localizedMessage}")
             }
