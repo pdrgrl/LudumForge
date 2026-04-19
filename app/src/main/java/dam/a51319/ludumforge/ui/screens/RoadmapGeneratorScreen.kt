@@ -43,39 +43,6 @@ fun RoadmapGeneratorScreen(viewModel: RoadmapGeneratorViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.BlurOn,
-                            contentDescription = "Logo",
-                            tint = PrimaryBlack,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "LudumForge",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = PrimaryBlack
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = "Profile",
-                            tint = PrimaryBlack
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SurfaceBase.copy(alpha = 0.9f),
-                    scrolledContainerColor = SurfaceBase
-                )
-            )
-        },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(

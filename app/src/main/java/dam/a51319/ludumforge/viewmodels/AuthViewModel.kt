@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.content.Context
+import dam.a51319.ludumforge.models.User
 
 sealed class AuthUiState {
     object Idle : AuthUiState()
@@ -22,6 +23,18 @@ class AuthViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+
+    init {
+        fetchUserProfile()
+    }
+
+    fun fetchUserProfile() {
+        viewModelScope.launch {
+            _currentUser.value = repository.getUserProfile()
+        }
+    }
 
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
@@ -39,7 +52,8 @@ class AuthViewModel : ViewModel() {
 
     fun logout() {
         repository.signOut()
-        _uiState.value = AuthUiState.Idle // Reset state so next login is fresh
+        _currentUser.value = null // Clear session
+        _uiState.value = AuthUiState.Idle
     }
 
     fun register(email: String, password: String) {

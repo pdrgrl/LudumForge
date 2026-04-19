@@ -42,23 +42,6 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
     val filters = listOf("All", "Active", "Upcoming", "Archived")
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.BlurOn, contentDescription = "Logo", tint = PrimaryBlack, modifier = Modifier.size(28.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("LudumForge", style = MaterialTheme.typography.titleLarge, color = PrimaryBlack)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Outlined.AccountCircle, contentDescription = "Profile", tint = PrimaryBlack)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceBase.copy(alpha = 0.9f))
-            )
-        },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(

@@ -41,8 +41,8 @@ fun PersonalDashboardScreen(
     authViewModel: AuthViewModel = viewModel(),
     onLogout: () -> Unit
 ) {
-    val currentUser by viewModel.currentUser.collectAsState()
-    var showMenu by remember { mutableStateOf(false) }
+//    val currentUser by authViewModel.currentUser.collectAsState()
+//    var showMenu by remember { mutableStateOf(false) }
     // State Collection
     val timeLeft by viewModel.timeLeftInSeconds.collectAsState()
     val priorityTasks by viewModel.myTasks.collectAsState()
@@ -56,50 +56,6 @@ fun PersonalDashboardScreen(
     )
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.BlurOn, contentDescription = "Logo", tint = PrimaryBlack, modifier = Modifier.size(28.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("LudumForge", style = MaterialTheme.typography.titleLarge, color = PrimaryBlack)
-                    }
-                },
-                actions = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Outlined.AccountCircle, contentDescription = "Profile", tint = PrimaryBlack)
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(SurfaceContainerLowest)
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = currentUser?.username ?: "Loading...",
-                                        fontWeight = FontWeight.Bold,
-                                        color = PrimaryBlack
-                                    )
-                                },
-                                onClick = { showMenu = false }
-                            )
-                            HorizontalDivider(color = GhostBorder)
-                            DropdownMenuItem(
-                                text = { Text("Sign Out", color = ErrorRed) },
-                                onClick = {
-                                    showMenu = false
-                                    authViewModel.logout()
-                                    onLogout()
-                                }
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceBase.copy(alpha = 0.9f))
-            )
-        },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(

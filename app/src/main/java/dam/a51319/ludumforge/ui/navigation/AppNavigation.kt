@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +27,9 @@ import dam.a51319.ludumforge.ui.screens.RegisterScreen
 import dam.a51319.ludumforge.ui.screens.RoadmapGeneratorScreen
 import dam.a51319.ludumforge.ui.screens.TeamWorkspaceScreen
 import com.google.firebase.auth.FirebaseAuth
+import dam.a51319.ludumforge.ui.components.LudumForgeTopAppBar
+import dam.a51319.ludumforge.viewmodels.AuthViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 object Routes {
     const val LOGIN = "login"
@@ -38,16 +42,30 @@ object Routes {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val currentUser = FirebaseAuth.getInstance().currentUser
+    val currentUser by authViewModel.currentUser.collectAsState()
     val startDest = if (currentUser != null) Routes.PERSONAL_DASHBOARD else Routes.LOGIN
 
 
     Scaffold(
+        topBar = {
+            // Show the top bar on every screen EXCEPT Login and Register
+            if (currentRoute != Routes.LOGIN && currentRoute != Routes.REGISTER) {
+                LudumForgeTopAppBar(
+                    currentUser = currentUser,
+                    onLogout = {
+                        authViewModel.logout()
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                )
+            }
+        },
         bottomBar = {
             val mainTabs = listOf(
                 Routes.PERSONAL_DASHBOARD,
@@ -58,11 +76,11 @@ fun AppNavigation() {
                 LudumForgeBottomBar(navController = navController, currentRoute = currentRoute)
             }
         }
-    ) { innerPadding ->
+    )  { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = startDest, // Use the dynamic variable here!
-            modifier = Modifier.padding(innerPadding)
+            startDestination = startDest,
+            modifier = Modifier.padding(innerPadding) // This padding now accounts for the global top bar!
         ) {
             // AUTH ROUTES
             composable(Routes.LOGIN) {
