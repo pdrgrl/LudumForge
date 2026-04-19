@@ -31,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +58,8 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
         User("u6", "RB", "rb@test.com", UserRole.DEVELOPER),
         User("u7", "QA", "qa@test.com", UserRole.ADMIN)
     )
+    val context = LocalContext.current
+
 
     Scaffold(
         floatingActionButton = {
@@ -104,17 +107,17 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 
             item { ColumnHeader("TO DO", groupedTasks[TaskStatus.TODO]?.size ?: 0) }
             items(groupedTasks[TaskStatus.TODO] ?: emptyList()) { task ->
-                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status) }
+                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
             }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { ColumnHeader("IN PROGRESS", groupedTasks[TaskStatus.IN_PROGRESS]?.size ?: 0) }
             items(groupedTasks[TaskStatus.IN_PROGRESS] ?: emptyList()) { task ->
-                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status) }
+                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
             }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { ColumnHeader("DONE", groupedTasks[TaskStatus.DONE]?.size ?: 0) }
             items(groupedTasks[TaskStatus.DONE] ?: emptyList()) { task ->
-                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status) }
+                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
             }        }
     }
     if (showBottomSheet) {

@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -32,28 +33,31 @@ import dam.a51319.ludumforge.viewmodels.OfflineTerminalViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
+import dam.a51319.ludumforge.data.ActionLog
 
 data class OfflineLogEntry(val timestamp: Date, val type: String, val description: String, val isError: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
+    val context = LocalContext.current
+
+    // Initialize the Room database connection once
+    LaunchedEffect(Unit) {
+        viewModel.initializeDatabase(context)
+    }
 
     // State Collection
     val commandInput by viewModel.noteText.collectAsState()
     val sessionTimerSeconds by viewModel.sessionTimerSeconds.collectAsState()
 
+    // Collect the REAL logs from Room!
+    val terminalLogs by viewModel.logs.collectAsState()
+
     val mins = sessionTimerSeconds / 60
     val secs = sessionTimerSeconds % 60
     val formattedTime = String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
-
-    val terminalLogs = listOf(
-        OfflineLogEntry(Date(System.currentTimeMillis() - 3600000), "SYSTEM", "Connection to main server lost. Switching to local cache."),
-        OfflineLogEntry(Date(System.currentTimeMillis() - 2400000), "CACHE", "Local state synchronized. Workspace ready for offline mode."),
-        OfflineLogEntry(Date(System.currentTimeMillis() - 1200000), "CREATE_TASK", "Task T-84 'Refactor Dialogue System' added to local queue."),
-        OfflineLogEntry(Date(System.currentTimeMillis() - 600000), "UPDATE_PROJ", "Project P-02 status changed to ACTIVE."),
-        OfflineLogEntry(Date(System.currentTimeMillis() - 300000), "SYNC_ERR", "Attempted sync... Network unreachable.", isError = true)
-    )
 
     Scaffold(
         containerColor = SurfaceBase
@@ -104,8 +108,11 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
                 Text("ACTION QUEUE & LOGS", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                 Spacer(modifier = Modifier.height(12.dp))
                 Box(modifier = Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(12.dp)).background(SurfaceContainerHigh).padding(16.dp)) {
-                    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(terminalLogs) { log -> TerminalLogLine(log) }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        reverseLayout = true
+                    ){ items(terminalLogs) { log -> TerminalLogLine(log) }
                         item {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(">", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = PrimaryBlack, fontWeight = FontWeight.Bold)
@@ -133,7 +140,7 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
                         singleLine = true,
                         decorationBox = { innerTextField ->
                             if (commandInput.isEmpty()) {
-                                Text("Enter terminal command or quick note...", color = SecondaryGray.copy(alpha = 0.7f), fontFamily = FontFamily.Monospace, fontSize = 14.sp)
+                                Text("Add a dev log or note...", color = SecondaryGray.copy(alpha = 0.7f), fontFamily = FontFamily.Monospace, fontSize = 14.sp)
                             }
                             innerTextField()
                         }
@@ -151,14 +158,27 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
 }
 
 @Composable
-fun TerminalLogLine(log: OfflineLogEntry) {
+fun TerminalLogLine(log: ActionLog) {
     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-    val timeString = timeFormat.format(log.timestamp)
-    val tagColor = if (log.isError) ErrorRed else SecondaryGray
+    val timeString = timeFormat.format(Date(log.timestamp))
+
+    // Color coding based on the type of event
+    val tagColor = when(log.type) {
+        "SYSTEM" -> Color(0xFF00C853) // Green for system events
+        "DEV_NOTE" -> SecondaryGray    // Gray for manual notes
+        else -> PrimaryBlack
+    }
 
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Text("[$timeString]", fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = SecondaryGray.copy(alpha = 0.7f), modifier = Modifier.width(70.dp))
         Text(log.type, fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = tagColor, modifier = Modifier.width(85.dp))
-        Text(log.description, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = if (log.isError) ErrorRed else PrimaryBlack, modifier = Modifier.weight(1f), lineHeight = 16.sp)
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(log.message, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = PrimaryBlack, lineHeight = 16.sp)
+            // Show a tiny indicator if it hasn't synced to Firebase yet
+            if (!log.isSynced) {
+                Text("Pending Sync...", fontSize = 8.sp, color = ErrorRed, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
     }
 }
