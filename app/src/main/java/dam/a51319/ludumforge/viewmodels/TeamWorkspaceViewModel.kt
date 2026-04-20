@@ -14,19 +14,35 @@ import com.google.firebase.auth.FirebaseAuth
 import android.content.Context
 import dam.a51319.ludumforge.data.LudumForgeDatabase
 import dam.a51319.ludumforge.data.repositories.ActionLogRepository
+import dam.a51319.ludumforge.data.repositories.AuthRepository
+import dam.a51319.ludumforge.models.User
+
 
 class TeamWorkspaceViewModel : ViewModel() {
 
     private val taskRepository = TaskRepository()
+    private val authRepository = AuthRepository()
 
     private val _teamTasks = MutableStateFlow<List<Task>>(emptyList())
     val teamTasks: StateFlow<List<Task>> = _teamTasks.asStateFlow()
+
+//    State to hold all real users
+    private val _teamMembers = MutableStateFlow<List<User>>(emptyList())
+    val teamMembers: StateFlow<List<User>> = _teamMembers.asStateFlow()
+
 
     // For now, hardcode the active project ID. Later, we'll pass this based on user selection.
     private val activeProjectId = "p1"
 
     init {
         loadTeamTasks()
+        loadTeamMembers()
+    }
+
+    private fun loadTeamMembers() {
+        viewModelScope.launch {
+            _teamMembers.value = authRepository.getAllUsers()
+        }
     }
 
     private fun loadTeamTasks() {

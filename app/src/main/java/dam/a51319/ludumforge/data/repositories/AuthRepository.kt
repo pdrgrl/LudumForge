@@ -100,7 +100,7 @@ class AuthRepository {
             } else {
                 // Document doesn't exist (e.g., old Google login). Create it now!
                 val email = firebaseUser.email ?: ""
-                val defaultUsername = if (email.contains("@")) email.substringBefore("@") else "Architect"
+                val defaultUsername = firebaseUser.displayName ?: if (email.contains("@")) email.substringBefore("@") else "Architect"
 
                 val newUser = User(
                     id = firebaseUser.uid,
@@ -123,6 +123,21 @@ class AuthRepository {
         }
     }
 
+    suspend fun getAllUsers(): List<User> {
+        return try {
+            val snapshot = db.collection("users").get().await()
+            snapshot.documents.mapNotNull { doc ->
+                User(
+                    id = doc.getString("id") ?: doc.id,
+                    username = doc.getString("username") ?: "Unknown",
+                    email = doc.getString("email") ?: "",
+                    role = UserRole.valueOf(doc.getString("role") ?: "DEVELOPER")
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 
     fun signOut() {
         try { auth.signOut() } catch (_: Exception) {}

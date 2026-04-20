@@ -38,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardType
 @Composable
 fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     val teamTasks by viewModel.teamTasks.collectAsState()
+    val realUsers by viewModel.teamMembers.collectAsState()
     val groupedTasks = teamTasks.groupBy { it.status }
 
     // State for the Bottom Sheet
@@ -49,15 +50,6 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     var newTaskMinutes by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(TaskCategory.CODE) }
 
-    val dummyUsers = listOf(
-        User("u1", "JD", "jd@test.com", UserRole.DEVELOPER),
-        User("u2", "AK", "ak@test.com", UserRole.ARTIST),
-        User("u3", "LW", "lw@test.com", UserRole.AUDIO_ENGINEER),
-        User("u4", "SM", "sm@test.com", UserRole.DEVELOPER),
-        User("u5", "TH", "th@test.com", UserRole.GAME_DESIGNER),
-        User("u6", "RB", "rb@test.com", UserRole.DEVELOPER),
-        User("u7", "QA", "qa@test.com", UserRole.ADMIN)
-    )
     val context = LocalContext.current
 
 
@@ -107,17 +99,17 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 
             item { ColumnHeader("TO DO", groupedTasks[TaskStatus.TODO]?.size ?: 0) }
             items(groupedTasks[TaskStatus.TODO] ?: emptyList()) { task ->
-                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
+                TaskCard(task, realUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
             }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { ColumnHeader("IN PROGRESS", groupedTasks[TaskStatus.IN_PROGRESS]?.size ?: 0) }
             items(groupedTasks[TaskStatus.IN_PROGRESS] ?: emptyList()) { task ->
-                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
+                TaskCard(task, realUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
             }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { ColumnHeader("DONE", groupedTasks[TaskStatus.DONE]?.size ?: 0) }
             items(groupedTasks[TaskStatus.DONE] ?: emptyList()) { task ->
-                TaskCard(task, dummyUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
+                TaskCard(task, realUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
             }        }
     }
     if (showBottomSheet) {
