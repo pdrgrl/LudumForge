@@ -41,15 +41,14 @@ fun PersonalDashboardScreen(
     authViewModel: AuthViewModel = viewModel(),
     onLogout: () -> Unit
 ) {
-//    val currentUser by authViewModel.currentUser.collectAsState()
-//    var showMenu by remember { mutableStateOf(false) }
-    // State Collection
     val timeLeft by viewModel.timeLeftInSeconds.collectAsState()
     val priorityTasks by viewModel.myTasks.collectAsState()
+    val activeJamId by SessionManager.activeJamId.collectAsState()
+
+    val myJams by viewModel.myJams.collectAsState()
 
     val hours = timeLeft / 3600
     val minutes = (timeLeft % 3600) / 60
-    val activeJamId by SessionManager.activeJamId.collectAsState()
 
 
     val activeProjects = listOf(
@@ -89,9 +88,22 @@ fun PersonalDashboardScreen(
             }
 
             item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(activeProjects) { project ->
-                        ActiveProjectCard(project)
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Show a "Create Jam" card first if no jams exist
+                    if (myJams.isEmpty()) {
+                        item {
+                            CreateJamCard(onCreate = { viewModel.createNewJam(it, "") })
+                        }
+                    }
+                    items(myJams) { project ->
+                        ActiveProjectCard(
+                            project = project,
+                            isActive = project.id == activeJamId, // Pass active state!
+                            onSelectJam = { SessionManager.setActiveJam(project.id) } // Wire the click!
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(40.dp))
@@ -133,47 +145,144 @@ fun StatCard(modifier: Modifier = Modifier, value: String, label: String) {
 }
 
 @Composable
-fun ActiveProjectCard(project: Project) {
-    val progress = if (project.id == "p1") 0.65f else 0.30f
-    val role = if (project.id == "p1") "Lead Dev" else "Architect"
+fun ActiveProjectCard(
+    project: Project,
+    isActive: Boolean = false,
+    onSelectJam: () -> Unit = {}
+) {
+    Card(
+        modifier = Modifier
+            .width(280.dp)
+            .shadow(elevation = if (isActive) 12.dp else 8.dp, shape = RoundedCornerShape(16.dp), spotColor = PrimaryBlack.copy(alpha = 0.08f))
+            .clickable { onSelectJam() }, // <-- THE ENTIRE CARD IS NOW TAPPABLE
+        colors = CardDefaults.cardColors(
+            // BLACK when active, white when not
+            containerColor = if (isActive) PrimaryBlack else SurfaceContainerLowest
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = if (isActive) null else BorderStroke(1.dp, GhostBorder)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Show "ACTIVE JAM" badge when selected
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isActive) Color.White.copy(alpha = 0.15f) else SurfaceContainerHigh)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        if (isActive) "● ACTIVE JAM" else project.status.name,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isActive) Color.White else PrimaryBlack,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+                Icon(
+                    Icons.Default.MoreHoriz,
+                    contentDescription = "Options",
+                    tint = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                project.name,
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+                color = if (isActive) Color.White else PrimaryBlack,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "Theme: ${project.theme}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isActive) Color.White.copy(alpha = 0.7f) else OnSurfaceVariant,
+                fontSize = 13.sp
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            // "Manage Workspace" button — now wired to set the active jam
+            Button(
+                onClick = { onSelectJam() },
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isActive) Color.White else Color.Transparent
+                ),
+                contentPadding = PaddingValues()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (isActive) Modifier.background(Color.Transparent)
+                            else Modifier.background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (isActive) "✓ Selected" else "Select Jam",
+                        color = if (isActive) PrimaryBlack else Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CreateJamCard(onCreate: (String) -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+    var jamName by remember { mutableStateOf("") }
 
     Card(
-        modifier = Modifier.width(280.dp).shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp), spotColor = PrimaryBlack.copy(alpha = 0.08f)),
+        modifier = Modifier
+            .width(220.dp)
+            .clickable { showDialog = true },
         colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, GhostBorder)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(SurfaceContainerHigh).padding(horizontal = 8.dp, vertical = 4.dp)) {
-                    Text(role, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack, letterSpacing = 0.5.sp)
-                }
-                Icon(Icons.Default.MoreHoriz, contentDescription = "Options", tint = SecondaryGray)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(project.name, style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp), color = PrimaryBlack, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("Theme: ${project.theme}", style = MaterialTheme.typography.bodyLarge, color = OnSurfaceVariant, fontSize = 13.sp)
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Sprint Progress", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SecondaryGray)
-                Text("${(progress * 100).toInt()}%", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = PrimaryBlack)
-            }
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(24.dp).height(160.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, tint = SecondaryGray, modifier = Modifier.size(32.dp))
             Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)), color = PrimaryBlack, trackColor = SurfaceContainerHigh)
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = { /* TODO */ },
-                modifier = Modifier.fillMaxWidth().height(44.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                contentPadding = PaddingValues()
-            ) {
-                Box(modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark))), contentAlignment = Alignment.Center) {
-                    Text("Manage Workspace", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
-            }
+            Text("New Jam", fontWeight = FontWeight.Bold, color = SecondaryGray)
         }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            containerColor = SurfaceContainerLowest,
+            title = { Text("Forge New Jam", fontWeight = FontWeight.Bold, color = PrimaryBlack) },
+            text = {
+                OutlinedTextField(
+                    value = jamName,
+                    onValueChange = { jamName = it },
+                    label = { Text("Jam Name") },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { onCreate(jamName); showDialog = false; jamName = "" },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                ) { Text("Create", color = Color.White) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Cancel", color = PrimaryBlack) }
+            }
+        )
     }
 }
 
