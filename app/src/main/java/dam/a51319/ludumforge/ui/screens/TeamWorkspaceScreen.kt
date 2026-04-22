@@ -39,7 +39,6 @@ import androidx.compose.ui.text.input.KeyboardType
 fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     val teamTasks by viewModel.teamTasks.collectAsState()
     val realUsers by viewModel.teamMembers.collectAsState()
-    val groupedTasks = teamTasks.groupBy { it.status }
 
     // State for the Bottom Sheet
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -50,7 +49,14 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     var newTaskMinutes by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(TaskCategory.CODE) }
     var selectedAssignee by remember { mutableStateOf<User?>(null) }
+    var filterQuery by remember { mutableStateOf("") }
     val context = LocalContext.current
+
+    val filteredTasks = remember(teamTasks, filterQuery) {
+        if (filterQuery.isBlank()) teamTasks
+        else teamTasks.filter { it.title.contains(filterQuery, ignoreCase = true) }
+    }
+    val groupedTasks = filteredTasks.groupBy { it.status }
 
 
     Scaffold(
@@ -79,10 +85,25 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextField(
-                        value = "",
-                        onValueChange = {},
+                        value = filterQuery, // ← was ""
+                        onValueChange = { filterQuery = it }, // ← was {}
                         placeholder = { Text("Filter tasks...", color = SecondaryGray, style = MaterialTheme.typography.bodyLarge) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = SecondaryGray, modifier = Modifier.size(20.dp)) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = SecondaryGray,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            // Show a clear button only when there's text
+                            if (filterQuery.isNotBlank()) {
+                                IconButton(onClick = { filterQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear", tint = SecondaryGray, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        },
                         modifier = Modifier.weight(1f).height(52.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = TextFieldDefaults.colors(
