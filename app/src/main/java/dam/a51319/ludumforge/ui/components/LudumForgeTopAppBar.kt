@@ -41,7 +41,7 @@ fun LudumForgeTopAppBar(currentUser: User?, onLogout: () -> Unit) {
                 Icon(Icons.Default.BlurOn, contentDescription = "Logo", tint = PrimaryBlack, modifier = Modifier.size(28.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         "LudumForge",
                         style = MaterialTheme.typography.titleLarge,

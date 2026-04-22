@@ -171,6 +171,69 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
                     }
                 }
 
+                // ── NEW: Assignee Picker ──────────────────────────────────
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("Assign To", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                Spacer(modifier = Modifier.height(8.dp))
+                if (realUsers.isEmpty()) {
+                    Text("No team members found.", fontSize = 12.sp, color = SecondaryGray)
+                } else {
+                    // Scrollable horizontal row of user chips
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // "Unassigned" option
+                        FilterChip(
+                            selected = selectedAssignee == null,
+                            onClick = { selectedAssignee = null },
+                            label = { Text("None") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryBlack,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                        realUsers.forEach { user ->
+                            val initials = user.username
+                                .split(" ", "_", ".")
+                                .take(2)
+                                .joinToString("") { it.first().uppercaseChar().toString() }
+                                .ifBlank { user.username.take(2).uppercase() }
+
+                            FilterChip(
+                                selected = selectedAssignee?.id == user.id,
+                                onClick = { selectedAssignee = user },
+                                leadingIcon = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (selectedAssignee?.id == user.id)
+                                                    Color.White.copy(alpha = 0.25f)
+                                                else SurfaceContainerHigh
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            initials,
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (selectedAssignee?.id == user.id) Color.White else PrimaryBlack
+                                        )
+                                    }
+                                },
+                                label = { Text(user.username) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = PrimaryBlack,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+                // ── END Assignee Picker ───────────────────────────────────
+
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
@@ -255,8 +318,19 @@ fun TaskCard(
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
                     assignees.forEach { user ->
-                        Box(modifier = Modifier.size(30.dp).clip(CircleShape).background(SurfaceContainerHigh).border(2.dp, SurfaceContainerLowest, CircleShape), contentAlignment = Alignment.Center) {
-                            Text(user.username, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                        val initials = user.username
+                            .split(" ", "_", ".")
+                            .take(2)
+                            .joinToString("") { it.first().uppercaseChar().toString() }
+                            .ifBlank { user.username.take(2).uppercase() }
+
+                        Box(
+                            modifier = Modifier.size(30.dp).clip(CircleShape)
+                                .background(SurfaceContainerHigh)
+                                .border(2.dp, SurfaceContainerLowest, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(initials, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
                         }
                     }
                 }
