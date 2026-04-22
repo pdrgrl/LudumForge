@@ -3,6 +3,7 @@ package dam.a51319.ludumforge.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import dam.a51319.ludumforge.data.SessionManager
 import dam.a51319.ludumforge.data.repositories.ProjectRepository
 import dam.a51319.ludumforge.data.repositories.TaskRepository
 import dam.a51319.ludumforge.models.Project
@@ -32,9 +33,14 @@ class PersonalDashboardViewModel : ViewModel() {
     private val _myJams = MutableStateFlow<List<Project>>(emptyList())
     val myJams: StateFlow<List<Project>> = _myJams.asStateFlow()
 
+    // Completion ratio per project: projectId → 0.0f..1.0f
+    private val _completionRatios = MutableStateFlow<Map<String, Float>>(emptyMap())
+    val completionRatios: StateFlow<Map<String, Float>> = _completionRatios.asStateFlow()
+
     init {
         loadMyTasks()
         loadMyJams()
+        loadAllTasksForJams()
         startTimer()
     }
 
@@ -81,6 +87,51 @@ class PersonalDashboardViewModel : ViewModel() {
                 taskRepository.updateTaskStatus(taskId, newTaskStatus)
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    fun renameJam(projectId: String, newName: String) {
+        if (newName.isBlank()) return
+        viewModelScope.launch {
+            try {
+                projectRepository.renameJam(projectId, newName)
+                // If the renamed jam is currently active, update the TopBar name too
+                if (SessionManager.activeJamId.value == projectId) {
+                    SessionManager.setActiveJam(projectId, newName)
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    fun deleteJam(projectId: String) {
+        viewModelScope.launch {
+            try {
+                projectRepository.deleteJam(projectId)
+                // If the deleted jam was active, clear the session
+                if (SessionManager.activeJamId.value == projectId) {
+                    SessionManager.clearActiveJam()
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    private fun loadAllTasksForJams() {
+        viewModelScope.launch {
+            // Re-compute whenever myJams changes
+            _myJams.collect { jams ->
+                val ratios = mutableMapOf<String, Float>()
+                jams.forEach { jam ->
+                    taskRepository.getTasksForProject(jam.id).collect { tasks ->
+                        if (tasks.isEmpty()) {
+                            ratios[jam.id] = 0f
+                        } else {
+                            val done = tasks.count { it.status == TaskStatus.DONE }
+                            ratios[jam.id] = done.toFloat() / tasks.size.toFloat()
+                        }
+                        _completionRatios.value = ratios.toMap()
+                    }
+                }
             }
         }
     }

@@ -87,4 +87,16 @@ class OfflineTerminalViewModel : ViewModel() {
             }
         }
     }
+
+    // Sync state for the Retry button
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    fun manualSync() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            repository?.syncPendingLogs()
+            _isSyncing.value = false
+        }
+    }
 }

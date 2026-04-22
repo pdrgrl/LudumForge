@@ -38,7 +38,17 @@ class ProjectRepository {
             }
         awaitClose { listener.remove() }
     }
+    suspend fun renameJam(projectId: String, newName: String) {
+        db.collection("projects").document(projectId)
+            .update("name", newName)
+            .await()
+    }
 
+    suspend fun deleteJam(projectId: String) {
+        db.collection("projects").document(projectId)
+            .delete()
+            .await()
+    }
     // Create a new Jam
     suspend fun createJam(name: String, theme: String, teamSize: Int, creatorId: String): String {
         val newJam = hashMapOf(

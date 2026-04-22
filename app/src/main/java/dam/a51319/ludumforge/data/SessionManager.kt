@@ -16,4 +16,9 @@ object SessionManager {
         _activeJamId.value = jamId
         _activeJamName.value = jamName
     }
+
+    fun clearActiveJam() {
+        _activeJamId.value = null
+        _activeJamName.value = null
+    }
 }

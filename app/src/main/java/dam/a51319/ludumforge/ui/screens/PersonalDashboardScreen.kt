@@ -49,6 +49,7 @@ fun PersonalDashboardScreen(
 
     val hours = timeLeft / 3600
     val minutes = (timeLeft % 3600) / 60
+    val completionRatios by viewModel.completionRatios.collectAsState()
 
     Scaffold(
         containerColor = SurfaceBase
@@ -84,7 +85,10 @@ fun PersonalDashboardScreen(
                         ActiveProjectCard(
                             project = project,
                             isActive = project.id == activeJamId,
-                            onSelectJam = { SessionManager.setActiveJam(project.id, project.name) }
+                            completionRatio = completionRatios[project.id] ?: 0f, // ← NEW
+                            onSelectJam = { SessionManager.setActiveJam(project.id, project.name) },
+                            onRename = { newName -> viewModel.renameJam(project.id, newName) },
+                            onDelete = { viewModel.deleteJam(project.id) }
                         )
                     }
                     item {
@@ -139,27 +143,60 @@ fun StatCard(modifier: Modifier = Modifier, value: String, label: String) {
 fun ActiveProjectCard(
     project: Project,
     isActive: Boolean = false,
-    onSelectJam: () -> Unit = {}
+    completionRatio: Float = 0f, // ← NEW
+    onSelectJam: () -> Unit = {},
+    onRename: (String) -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
+    var showOptionsMenu by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var renameInput by remember { mutableStateOf(project.name) }
+
     Card(
         modifier = Modifier
             .width(280.dp)
             .shadow(elevation = if (isActive) 12.dp else 8.dp, shape = RoundedCornerShape(16.dp), spotColor = PrimaryBlack.copy(alpha = 0.08f))
-            .clickable { onSelectJam() }, // <-- THE ENTIRE CARD IS NOW TAPPABLE
-        colors = CardDefaults.cardColors(
-            // BLACK when active, white when not
-            containerColor = if (isActive) PrimaryBlack else SurfaceContainerLowest
-        ),
+            .clickable { onSelectJam() },
+        colors = CardDefaults.cardColors(containerColor = if (isActive) PrimaryBlack else SurfaceContainerLowest),
         shape = RoundedCornerShape(16.dp),
         border = if (isActive) null else BorderStroke(1.dp, GhostBorder)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+            Spacer(modifier = Modifier.height(20.dp))
+            // ── Progress Bar ────────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Show "ACTIVE JAM" badge when selected
+                Text(
+                    "Completion",
+                    fontSize = 10.sp,
+                    color = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
+                )
+                Text(
+                    "${(completionRatio * 100).toInt()}%",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isActive) Color.White else PrimaryBlack
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            LinearProgressIndicator(
+                progress = { completionRatio },
+                modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)),
+                color = if (isActive) Color.White else PrimaryBlack,
+                trackColor = if (isActive) Color.White.copy(alpha = 0.2f) else SurfaceContainerHigh
+            )
+            // ── End Progress Bar ────────────────────────────────────────
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
@@ -168,17 +205,53 @@ fun ActiveProjectCard(
                 ) {
                     Text(
                         if (isActive) "● ACTIVE JAM" else project.status.name,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold,
                         color = if (isActive) Color.White else PrimaryBlack,
                         letterSpacing = 0.5.sp
                     )
                 }
-                Icon(
-                    Icons.Default.MoreHoriz,
-                    contentDescription = "Options",
-                    tint = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
-                )
+
+                // ── Three-dot menu ──────────────────────────────────────
+                Box {
+                    IconButton(
+                        onClick = { showOptionsMenu = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MoreHoriz,
+                            contentDescription = "Options",
+                            tint = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showOptionsMenu,
+                        onDismissRequest = { showOptionsMenu = false },
+                        modifier = Modifier.background(SurfaceContainerLowest)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Rename", color = PrimaryBlack) },
+                            onClick = {
+                                renameInput = project.name
+                                showOptionsMenu = false
+                                showRenameDialog = true
+                            },
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(16.dp)) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = ErrorRed) },
+                            onClick = {
+                                showOptionsMenu = false
+                                showDeleteDialog = true
+                            },
+                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = ErrorRed, modifier = Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+//                Icon(
+//                    Icons.Default.MoreHoriz,
+//                    contentDescription = "Options",
+//                    tint = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
+//                )
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -220,6 +293,56 @@ fun ActiveProjectCard(
                         color = if (isActive) PrimaryBlack else Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
+                    )
+                }
+                // Rename Dialog
+                if (showRenameDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showRenameDialog = false },
+                        containerColor = SurfaceContainerLowest,
+                        title = { Text("Rename Jam", fontWeight = FontWeight.Bold, color = PrimaryBlack) },
+                        text = {
+                            OutlinedTextField(
+                                value = renameInput,
+                                onValueChange = { renameInput = it },
+                                label = { Text("Jam Name") },
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = { onRename(renameInput); showRenameDialog = false },
+                                enabled = renameInput.isNotBlank(),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                            ) { Text("Save", color = Color.White) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showRenameDialog = false }) { Text("Cancel", color = PrimaryBlack) }
+                        }
+                    )
+                }
+
+                // Delete Confirmation Dialog
+                if (showDeleteDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteDialog = false },
+                        containerColor = SurfaceContainerLowest,
+                        title = { Text("Delete Jam?", fontWeight = FontWeight.Bold, color = PrimaryBlack) },
+                        text = {
+                            Text(
+                                "\"${project.name}\" and all its tasks will be permanently deleted. This cannot be undone.",
+                                color = OnSurfaceVariant
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = { onDelete(); showDeleteDialog = false },
+                                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                            ) { Text("Delete", color = Color.White) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel", color = PrimaryBlack) }
+                        }
                     )
                 }
             }

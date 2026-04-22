@@ -58,6 +58,7 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
     val mins = sessionTimerSeconds / 60
     val secs = sessionTimerSeconds % 60
     val formattedTime = String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
+    val isSyncing by viewModel.isSyncing.collectAsState()
 
     Scaffold(
         containerColor = SurfaceBase
@@ -81,23 +82,62 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
                     border = BorderStroke(1.dp, GhostBorder)
                 ) {
                     Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(SurfaceContainerHigh), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Outlined.CloudOff, contentDescription = "Offline", tint = SecondaryGray, modifier = Modifier.size(20.dp))
+                        Box(
+                            modifier = Modifier.size(40.dp).clip(CircleShape)
+                                .background(SurfaceContainerHigh),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.CloudOff,
+                                contentDescription = "Offline",
+                                tint = SecondaryGray,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Working Locally", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
-                            Text("Session Duration: $formattedTime", fontSize = 13.sp, color = SecondaryGray)
+                            Text(
+                                "Working Locally",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryBlack
+                            )
+                            Text(
+                                "Session Duration: $formattedTime",
+                                fontSize = 13.sp,
+                                color = SecondaryGray
+                            )
                         }
                         Button(
-                            onClick = { /* TODO */ },
-                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh, contentColor = PrimaryBlack),
+                            onClick = { viewModel.manualSync() },
+                            enabled = !isSyncing,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = SurfaceContainerHigh,
+                                contentColor = PrimaryBlack,
+                                disabledContainerColor = SurfaceContainerHigh.copy(alpha = 0.5f)
+                            ),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                            if (isSyncing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(14.dp),
+                                    color = PrimaryBlack,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Outlined.Sync,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Retry", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                if (isSyncing) "Syncing..." else "Retry",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
