@@ -15,6 +15,7 @@ import dam.a51319.ludumforge.models.User
 import dam.a51319.ludumforge.ui.theme.*
 import android.content.Context
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import dam.a51319.ludumforge.data.SessionManager
@@ -40,17 +41,26 @@ fun LudumForgeTopAppBar(currentUser: User?, onLogout: () -> Unit) {
                 Icon(Icons.Default.BlurOn, contentDescription = "Logo", tint = PrimaryBlack, modifier = Modifier.size(28.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Text("LudumForge", style = MaterialTheme.typography.titleLarge, color = PrimaryBlack, fontWeight = FontWeight.Bold)
-                    // Show active jam name if one is selected
-                    if (!activeJamName.isNullOrBlank()) {
-                        Text(
-                            "▸ $activeJamName",
-                            fontSize = 11.sp,
-                            color = SecondaryGray,
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 0.3.sp
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(18.dp))
+                    Text(
+                        "LudumForge",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = PrimaryBlack,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Always compose the Text to reserve space, but change visibility
+                    Text(
+                        text = if (!activeJamName.isNullOrBlank()) "▸ $activeJamName" else " ", // Use space as placeholder
+                        fontSize = 14.sp,
+                        color = SecondaryGray,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.3.sp,
+                        modifier = Modifier.graphicsLayer {
+                            // Set alpha to 0 if no jam name, making it invisible but keeping its size
+                            alpha = if (!activeJamName.isNullOrBlank()) 1f else 0f
+                        }
+                    )
                 }
             }
         },
