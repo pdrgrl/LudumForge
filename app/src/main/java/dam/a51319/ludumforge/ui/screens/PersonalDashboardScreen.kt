@@ -103,7 +103,13 @@ fun PersonalDashboardScreen(
 
             items(priorityTasks) { task ->
                 Box(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    PriorityTaskCard(task = task, projectName = myJams.find { it.id == task.projectId }?.name ?: "Unknown Project")
+                    PriorityTaskCard(
+                        task = task,
+                        projectName = myJams.find { it.id == task.projectId }?.name ?: "Unknown Project",
+                        onStatusChange = { taskId, newStatus ->
+                            viewModel.updateTaskStatus(taskId, newStatus)
+                        }
+                    )
                 }
             }
         }
@@ -272,7 +278,11 @@ fun CreateJamCard(onCreate: (String) -> Unit) {
 }
 
 @Composable
-fun PriorityTaskCard(task: Task, projectName: String) {
+fun PriorityTaskCard(
+    task: Task,
+    projectName: String,
+    onStatusChange: (String, TaskStatus) -> Unit = { _, _ -> } // default no-op so existing calls don't break
+) {
     val isDone = task.status == TaskStatus.DONE
     val isInProgress = task.status == TaskStatus.IN_PROGRESS
     val statusText = when (task.status) {
@@ -282,31 +292,64 @@ fun PriorityTaskCard(task: Task, projectName: String) {
         TaskStatus.DONE -> "Done"
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable { /* TODO */ },
-        colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, GhostBorder)
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(if (isDone) SurfaceContainerLowest else SurfaceContainerHigh).border(1.dp, if (isDone) GhostBorder else Color.Transparent, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isDone) Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(20.dp))
-                else if (isInProgress) Icon(Icons.Outlined.Schedule, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(20.dp))
-                else Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(SecondaryGray))
+    var showMenu by remember { mutableStateOf(false) }
+
+    Box { // Wrap in Box so DropdownMenu anchors correctly
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+                .clickable { showMenu = true }, // ← was /* TODO */
+            colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, GhostBorder)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                        .background(if (isDone) SurfaceContainerLowest else SurfaceContainerHigh)
+                        .border(1.dp, if (isDone) GhostBorder else Color.Transparent, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isDone) Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(20.dp))
+                    else if (isInProgress) Icon(Icons.Outlined.Schedule, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(20.dp))
+                    else Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(SecondaryGray))
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(task.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), color = PrimaryBlack, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(projectName, fontSize = 12.sp, color = SecondaryGray)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Box(
+                        modifier = Modifier.clip(RoundedCornerShape(4.dp))
+                            .background(if (isInProgress) PrimaryBlack else SurfaceContainerHigh)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(statusText, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (isInProgress) SurfaceContainerLowest else PrimaryBlack, letterSpacing = 0.5.sp)
+                    }
+                }
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(task.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), color = PrimaryBlack, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(projectName, fontSize = 12.sp, color = SecondaryGray)
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(if (isInProgress) PrimaryBlack else SurfaceContainerHigh).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                    Text(statusText, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (isInProgress) SurfaceContainerLowest else PrimaryBlack, letterSpacing = 0.5.sp)
+        }
+
+        // Status picker dropdown — same pattern as TaskCard in Workspace
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false },
+            modifier = Modifier.background(SurfaceContainerLowest)
+        ) {
+            Text(" Move to...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SecondaryGray, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+            TaskStatus.entries.forEach { status ->
+                if (status != task.status) {
+                    DropdownMenuItem(
+                        text = { Text(status.name.replace("_", " ")) },
+                        onClick = {
+                            showMenu = false
+                            onStatusChange(task.id, status)
+                        }
+                    )
                 }
             }
         }

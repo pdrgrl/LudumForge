@@ -33,12 +33,15 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import dam.a51319.ludumforge.data.SessionManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     val teamTasks by viewModel.teamTasks.collectAsState()
     val realUsers by viewModel.teamMembers.collectAsState()
+    val activeJamId by SessionManager.activeJamId.collectAsState()
 
     // State for the Bottom Sheet
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -61,78 +64,173 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showBottomSheet = true },
-                containerColor = PrimaryBlack,
-                contentColor = SurfaceContainerLowest,
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
-            ) {
-                Icon(Icons.Default.AddTask, contentDescription = "Add Task")
+            // Hide FAB too when no jam is selected
+            if (activeJamId != null) {
+                FloatingActionButton(
+                    onClick = { showBottomSheet = true },
+                    containerColor = PrimaryBlack,
+                    contentColor = SurfaceContainerLowest,
+                    shape = CircleShape,
+                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                ) {
+                    Icon(Icons.Default.AddTask, contentDescription = "Add Task")
+                }
             }
         },
         containerColor = SurfaceBase
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 24.dp),
-            contentPadding = PaddingValues(top = 24.dp, bottom = 100.dp)
-        ) {
-            item {
-                Text("STUDIO WORKSPACE", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Team Workspace", style = MaterialTheme.typography.headlineLarge, color = PrimaryBlack)
-                Spacer(modifier = Modifier.height(24.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TextField(
-                        value = filterQuery, // ← was ""
-                        onValueChange = { filterQuery = it }, // ← was {}
-                        placeholder = { Text("Filter tasks...", color = SecondaryGray, style = MaterialTheme.typography.bodyLarge) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = null,
-                                tint = SecondaryGray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        trailingIcon = {
-                            // Show a clear button only when there's text
-                            if (filterQuery.isNotBlank()) {
-                                IconButton(onClick = { filterQuery = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear", tint = SecondaryGray, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = SurfaceContainerHigh,
-                            unfocusedContainerColor = SurfaceContainerHigh,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        singleLine = true
+        // Guard: no jam selected
+        val activeJamId by SessionManager.activeJamId.collectAsState()
+        if (activeJamId == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 40.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.FolderOff,
+                        contentDescription = null,
+                        tint = SecondaryGray.copy(alpha = 0.4f),
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        "No Active Jam",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlack
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Head to the Dashboard and select or create a Jam to start managing tasks.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = SecondaryGray,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 22.sp
                     )
                 }
-                Spacer(modifier = Modifier.height(40.dp))
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp),
+                contentPadding = PaddingValues(top = 24.dp, bottom = 100.dp)
+            ) {
+                item {
+                    Text(
+                        "STUDIO WORKSPACE",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = SecondaryGray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Team Workspace",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = PrimaryBlack
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
 
-            item { ColumnHeader("TO DO", groupedTasks[TaskStatus.TODO]?.size ?: 0) }
-            items(groupedTasks[TaskStatus.TODO] ?: emptyList()) { task ->
-                TaskCard(task, realUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        TextField(
+                            value = filterQuery, // ← was ""
+                            onValueChange = { filterQuery = it }, // ← was {}
+                            placeholder = {
+                                Text(
+                                    "Filter tasks...",
+                                    color = SecondaryGray,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = SecondaryGray,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            trailingIcon = {
+                                // Show a clear button only when there's text
+                                if (filterQuery.isNotBlank()) {
+                                    IconButton(onClick = { filterQuery = "" }) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Clear",
+                                            tint = SecondaryGray,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = SurfaceContainerHigh,
+                                unfocusedContainerColor = SurfaceContainerHigh,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            singleLine = true
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(40.dp))
+                }
+
+                item { ColumnHeader("TO DO", groupedTasks[TaskStatus.TODO]?.size ?: 0) }
+                items(groupedTasks[TaskStatus.TODO] ?: emptyList()) { task ->
+                    TaskCard(task, realUsers) { id, status ->
+                        viewModel.updateTaskStatus(
+                            id,
+                            status,
+                            task.title,
+                            context
+                        )
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+                item {
+                    ColumnHeader(
+                        "IN PROGRESS",
+                        groupedTasks[TaskStatus.IN_PROGRESS]?.size ?: 0
+                    )
+                }
+                items(groupedTasks[TaskStatus.IN_PROGRESS] ?: emptyList()) { task ->
+                    TaskCard(task, realUsers) { id, status ->
+                        viewModel.updateTaskStatus(
+                            id,
+                            status,
+                            task.title,
+                            context
+                        )
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+                item { ColumnHeader("DONE", groupedTasks[TaskStatus.DONE]?.size ?: 0) }
+                items(groupedTasks[TaskStatus.DONE] ?: emptyList()) { task ->
+                    TaskCard(task, realUsers) { id, status ->
+                        viewModel.updateTaskStatus(
+                            id,
+                            status,
+                            task.title,
+                            context
+                        )
+                    }
+                }
             }
-            item { Spacer(modifier = Modifier.height(16.dp)) }
-            item { ColumnHeader("IN PROGRESS", groupedTasks[TaskStatus.IN_PROGRESS]?.size ?: 0) }
-            items(groupedTasks[TaskStatus.IN_PROGRESS] ?: emptyList()) { task ->
-                TaskCard(task, realUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
-            }
-            item { Spacer(modifier = Modifier.height(16.dp)) }
-            item { ColumnHeader("DONE", groupedTasks[TaskStatus.DONE]?.size ?: 0) }
-            items(groupedTasks[TaskStatus.DONE] ?: emptyList()) { task ->
-                TaskCard(task, realUsers) { id, status -> viewModel.updateTaskStatus(id, status, task.title, context) }
-            }        }
+        }
     }
+
     if (showBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBottomSheet = false },
@@ -145,7 +243,12 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
                     .padding(24.dp)
                     .padding(bottom = 32.dp)
             ) {
-                Text("Create New Task", style = MaterialTheme.typography.titleLarge, color = PrimaryBlack, fontWeight = FontWeight.Bold)
+                Text(
+                    "Create New Task",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = PrimaryBlack,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(modifier = Modifier.height(24.dp))
 
                 OutlinedTextField(
@@ -176,7 +279,11 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Simple Category Picker
-                Text("Category", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                Text(
+                    "Category",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = SecondaryGray
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TaskCategory.values().forEach { category ->
@@ -194,7 +301,11 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 
                 // ── NEW: Assignee Picker ──────────────────────────────────
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Assign To", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                Text(
+                    "Assign To",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = SecondaryGray
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 if (realUsers.isEmpty()) {
                     Text("No team members found.", fontSize = 12.sp, color = SecondaryGray)
@@ -271,7 +382,9 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
                         newTaskMinutes = ""
                         selectedAssignee = null
                     },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
                 ) {
@@ -285,17 +398,29 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 @Composable
 fun ColumnHeader(title: String, count: Int) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).border(2.dp, PrimaryBlack, CircleShape))
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, PrimaryBlack, CircleShape)
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Text(title, style = MaterialTheme.typography.labelLarge, color = PrimaryBlack)
         }
         Surface(color = SurfaceContainerHigh, shape = CircleShape) {
-            Text(count.toString(), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelLarge, color = PrimaryBlack)
+            Text(
+                count.toString(),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = PrimaryBlack
+            )
         }
     }
 }
@@ -319,21 +444,43 @@ fun TaskCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp)
-            .shadow(elevation = if (isDone) 0.dp else 4.dp, shape = RoundedCornerShape(12.dp), spotColor = PrimaryBlack.copy(alpha = 0.05f))
+            .shadow(
+                elevation = if (isDone) 0.dp else 4.dp,
+                shape = RoundedCornerShape(12.dp),
+                spotColor = PrimaryBlack.copy(alpha = 0.05f)
+            )
             .clickable { showMenu = true }, // <--- TRIGGER MENU ON CLICK
         colors = CardDefaults.cardColors(containerColor = if (isDone) SurfaceBase else SurfaceContainerLowest),
         shape = RoundedCornerShape(12.dp),
         border = if (isDone) BorderStroke(1.dp, GhostBorder) else null
     ) {
         Box { // Wrap content in a Box so the DropdownMenu anchors correctly
-            Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                Text(task.category.name, style = MaterialTheme.typography.labelLarge, color = if (isInProgress) PrimaryBlack else SecondaryGray.copy(alpha = contentAlpha))
+            Column(modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth()) {
+                Text(
+                    task.category.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isInProgress) PrimaryBlack else SecondaryGray.copy(alpha = contentAlpha)
+                )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(task.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), textDecoration = if (isDone) TextDecoration.LineThrough else null, color = PrimaryBlack.copy(alpha = contentAlpha))
+                Text(
+                    task.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    textDecoration = if (isDone) TextDecoration.LineThrough else null,
+                    color = PrimaryBlack.copy(alpha = contentAlpha)
+                )
 
                 if (isInProgress) {
                     Spacer(modifier = Modifier.height(20.dp))
-                    LinearProgressIndicator(progress = { 0.65f }, modifier = Modifier.fillMaxWidth().height(2.dp), color = PrimaryBlack, trackColor = SurfaceContainerHigh)
+                    LinearProgressIndicator(
+                        progress = { 0.65f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp),
+                        color = PrimaryBlack,
+                        trackColor = SurfaceContainerHigh
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -346,12 +493,19 @@ fun TaskCard(
                             .ifBlank { user.username.take(2).uppercase() }
 
                         Box(
-                            modifier = Modifier.size(30.dp).clip(CircleShape)
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
                                 .background(SurfaceContainerHigh)
                                 .border(2.dp, SurfaceContainerLowest, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(initials, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                            Text(
+                                initials,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryBlack
+                            )
                         }
                     }
                 }
@@ -363,7 +517,13 @@ fun TaskCard(
                 onDismissRequest = { showMenu = false },
                 modifier = Modifier.background(SurfaceContainerLowest)
             ) {
-                Text(" Move to...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SecondaryGray, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                Text(
+                    " Move to...",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SecondaryGray,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
                 TaskStatus.entries.forEach { status ->
                     if (status != task.status) { // Only show options that are different from current
                         DropdownMenuItem(

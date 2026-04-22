@@ -75,4 +75,14 @@ class PersonalDashboardViewModel : ViewModel() {
             }
         }
     }
+    fun updateTaskStatus(taskId: String, newTaskStatus: TaskStatus) {
+        viewModelScope.launch {
+            try {
+                taskRepository.updateTaskStatus(taskId, newTaskStatus)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 }
