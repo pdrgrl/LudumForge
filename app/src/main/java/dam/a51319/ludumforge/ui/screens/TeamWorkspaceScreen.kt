@@ -49,7 +49,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     var newTaskTitle by remember { mutableStateOf("") }
     var newTaskMinutes by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(TaskCategory.CODE) }
-
+    var selectedAssignee by remember { mutableStateOf<User?>(null) }
     val context = LocalContext.current
 
 
@@ -175,10 +175,17 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
 
                 Button(
                     onClick = {
-                        viewModel.addTask(newTaskTitle, selectedCategory, newTaskMinutes.toIntOrNull() ?: 60, context)
+                        viewModel.addTask(
+                            newTaskTitle,
+                            selectedCategory,
+                            newTaskMinutes.toIntOrNull() ?: 60,
+                            context,
+                            assignedTo = selectedAssignee?.id
+                        )
                         showBottomSheet = false
                         newTaskTitle = ""
                         newTaskMinutes = ""
+                        selectedAssignee = null
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(8.dp),

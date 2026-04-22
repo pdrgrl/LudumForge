@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.*
@@ -34,7 +33,6 @@ import dam.a51319.ludumforge.models.*
 import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
 import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
-import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,8 +53,14 @@ fun PersonalDashboardScreen(
 
 
     val activeProjects = listOf(
-        Project("p1", "Neon Nights", "Cyberpunk", Date(), Date(), 4, ProjectStatus.ACTIVE),
-        Project("p2", "Cozy Tavern", "Fantasy/Management", Date(), Date(), 2, ProjectStatus.ACTIVE)
+        Project("p1", "Neon Nights", "Cyberpunk", teamSize = 4, status = ProjectStatus.ACTIVE,),
+        Project(
+            "p2",
+            "Cozy Tavern",
+            "Fantasy/Management",
+            teamSize = 2,
+            status = ProjectStatus.ACTIVE,
+        )
     )
 
     Scaffold(

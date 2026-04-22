@@ -1,11 +1,9 @@
 package dam.a51319.ludumforge.data.repositories
 
 import dam.a51319.ludumforge.models.Project
-import dam.a51319.ludumforge.models.ProjectStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
-import java.util.Date
 
 class ItchRepository {
 
@@ -41,10 +39,8 @@ class ItchRepository {
                             id = "jam_${title.hashCode()}",
                             name = title,
                             theme = "itch.io$jamUrl", // Show the URL path as the theme/description
-                            startDate = Date(),
-                            endDate = Date(),
-                            teamSize = participants, // Pass participants to UI
-                            status = ProjectStatus.PLANNING // Default status for calendar items
+                            teamSize = participants,
+                            // Default status for calendar items
                         )
                     )
                 }

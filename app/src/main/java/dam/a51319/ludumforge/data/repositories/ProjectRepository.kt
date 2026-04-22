@@ -2,77 +2,65 @@ package dam.a51319.ludumforge.data.repositories
 
 import com.google.firebase.firestore.FirebaseFirestore
 import dam.a51319.ludumforge.models.Project
+import dam.a51319.ludumforge.models.ProjectStatus
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 
 class ProjectRepository {
+    private val db = FirebaseFirestore.getInstance()
 
-    /**
-     * Creates a new project document in Firestore.
-     */
-    suspend fun createProject(project: Project): Result<Unit> {
-        return try {
-            val projectsCollection = FirebaseFirestore.getInstance().collection("projects")
-            // Uses the project.id as the document ID
-            projectsCollection.document(project.id).set(project).await()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Fetches all projects associated with a specific user.
-     * Note: This assumes you eventually add an `ownerId` or `members` array to your Project model.
-     * For now, it performs a basic fetch (you can adapt the whereEqualTo query to your exact data structure).
-     */
-    suspend fun getProjectsByUser(userId: String): Result<List<Project>> {
-        return try {
-            val projectsCollection = FirebaseFirestore.getInstance().collection("projects")
-            val snapshot = projectsCollection
-                // .whereArrayContains("membersList", userId) // Uncomment when your data structure links users to projects
-                .get()
-                .await()
-
-            val projects = snapshot.toObjects(Project::class.java)
-            Result.success(projects)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Real-time listener for a single project document.
-     * Returns a Flow that emits a new Project object every time the document changes on the server.
-     */
-    fun listenToProject(projectId: String): Flow<Project?> = callbackFlow {
-        val projectsCollection = try {
-            FirebaseFirestore.getInstance().collection("projects")
-        } catch (e: Exception) {
-            close(e)
-            return@callbackFlow
-        }
-
-        val listenerRegistration = projectsCollection.document(projectId)
+    // Real-time listener scoped to the current user's jams
+    fun getMyJams(userId: String): Flow<List<Project>> = callbackFlow {
+        val listener = db.collection("projects")
+            .whereEqualTo("creatorId", userId)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null && snapshot.exists()) {
-                    val project = snapshot.toObject(Project::class.java)
-                    trySend(project)
-                } else {
-                    trySend(null)
+                if (error != null) { close(error); return@addSnapshotListener }
+                if (snapshot != null) {
+                    val jams = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            Project(
+                                id = doc.id,
+                                name = doc.getString("name") ?: "Untitled Jam",
+                                theme = doc.getString("theme") ?: "",
+                                startDate = doc.getDate("startDate") ?: Date(),
+                                endDate = doc.getDate("endDate") ?: Date(),
+                                teamSize = doc.getLong("teamSize")?.toInt() ?: 1,
+                                status = ProjectStatus.valueOf(doc.getString("status") ?: "PLANNING"),
+                                creatorId = doc.getString("creatorId") ?: ""
+                            )
+                        } catch (e: Exception) { null }
+                    }
+                    trySend(jams)
                 }
             }
+        awaitClose { listener.remove() }
+    }
 
-        // Suspends until the Flow collector is cancelled, then cleans up the Firestore listener
-        awaitClose {
-            listenerRegistration.remove()
-        }
+    // Create a new Jam
+    suspend fun createJam(name: String, theme: String, teamSize: Int, creatorId: String): String {
+        val newJam = hashMapOf(
+            "name" to name,
+            "theme" to theme,
+            "startDate" to Date(),
+            "endDate" to Date(System.currentTimeMillis() + (7L * 24 * 60 * 60 * 1000)),
+            "teamSize" to teamSize,
+            "status" to ProjectStatus.PLANNING.name,
+            "creatorId" to creatorId
+        )
+        val docRef = db.collection("projects").add(newJam).await()
+        return docRef.id
+    }
+
+    // Keep the existing listenToProject for future use
+    fun listenToProject(projectId: String): Flow<Project?> = callbackFlow {
+        val listener = db.collection("projects").document(projectId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) { close(error); return@addSnapshotListener }
+                trySend(snapshot?.toObject(Project::class.java))
+            }
+        awaitClose { listener.remove() }
     }
 }

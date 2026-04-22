@@ -17,5 +17,6 @@ data class Project(
     val startDate: Date = Date(),
     val endDate: Date = Date(),
     val teamSize: Int = 1,
-    val status: ProjectStatus = ProjectStatus.PLANNING
+    val status: ProjectStatus = ProjectStatus.PLANNING,
+    val creatorId: String = ""
 )

@@ -78,6 +78,7 @@ class TeamWorkspaceViewModel : ViewModel() {
                 TaskStatus.DONE -> "🏁 $userName completed '$taskTitle'"
                 TaskStatus.IN_PROGRESS -> "$userName started '$taskTitle'"
                 TaskStatus.TODO -> "$userName moved '$taskTitle' back to TODO"
+                else -> "$userName moved '$taskTitle' to ${newStatus.name}"
             }
             // Use currentJamId here!
             actionRepo.addSystemEvent(currentJamId, logMessage)
