@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
+import dam.a51319.ludumforge.data.SessionManager
 
 // Sealed class representing the different states of the AI Generation process
 sealed class RoadmapUiState {
@@ -39,8 +40,9 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
 
     // Pass the API Key and Premium status from the UI
     fun onGenerateClicked(userApiKey: String, isPremium: Boolean) {
-        if (gameTitle.value.isBlank()) {
-            _uiState.value = RoadmapUiState.Error("Project vision cannot be empty.")
+        // 1. Get the active Jam. If none is selected, show an error!
+        val currentJamId = SessionManager.activeJamId.value ?: run {
+            _uiState.value = RoadmapUiState.Error("Please select an active Jam in the Planning tab first.")
             return
         }
 
@@ -102,7 +104,7 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
 
                     val task = Task(
                         id = "ai_${i}",
-                        projectId = "p1", // Hardcoded to active project
+                        projectId = currentJamId, // Hardcoded to active project
                         title = obj.getString("title"),
                         category = safeCategory, // <-- Use the safe category
                         estimatedMinutes = obj.getInt("estimatedMinutes"),
@@ -124,7 +126,7 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
                     val user = FirebaseAuth.getInstance().currentUser
                     val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
                     actionRepo.addSystemEvent(
-                        "p1",
+                        currentJamId,
                         "$userName generated AI roadmap for '${gameTitle.value}' — ${generatedTasks.size} tasks created"
                     )
                 } catch (e: Exception) {

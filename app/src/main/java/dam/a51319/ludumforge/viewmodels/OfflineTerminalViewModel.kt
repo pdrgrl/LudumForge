@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dam.a51319.ludumforge.data.SessionManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 
 class OfflineTerminalViewModel : ViewModel() {
 
@@ -27,30 +31,37 @@ class OfflineTerminalViewModel : ViewModel() {
     private val _sessionTimerSeconds = MutableStateFlow(0L)
     val sessionTimerSeconds: StateFlow<Long> = _sessionTimerSeconds.asStateFlow()
 
-    private val activeProjectId = "p1" // Hardcoded for now
-
     init {
         startSessionTimer()
     }
 
     // Call this once from the UI to hook up the database
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun initializeDatabase(context: Context) {
         if (repository == null) {
             val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
             repository = ActionLogRepository(dao)
 
-            // 1. Observe local logs
+            // 1. Observe local logs based on the GLOBAL Jam ID!
             viewModelScope.launch {
-                repository?.getLogsForProject(activeProjectId)?.collect { localLogs ->
-                    _logs.value = localLogs
-                }
+                SessionManager.activeJamId
+                    .flatMapLatest { jamId ->
+                        if (jamId != null) {
+                            repository!!.getLogsForProject(jamId)
+                        } else {
+                            flowOf(emptyList()) // No jam selected
+                        }
+                    }
+                    .collect { localLogs ->
+                        _logs.value = localLogs
+                    }
             }
 
             // 2. Start the Background Sync Loop
             viewModelScope.launch {
                 while (true) {
                     repository?.syncPendingLogs()
-                    delay(10000L) // Try to sync every 10 seconds
+                    delay(10000L)
                 }
             }
         }
@@ -58,11 +69,12 @@ class OfflineTerminalViewModel : ViewModel() {
 
     fun submitNote() {
         val text = noteText.value
+        val currentJamId = SessionManager.activeJamId.value ?: return // <-- GET GLOBAL ID
+
         if (text.isNotBlank()) {
             viewModelScope.launch {
-                // Save it instantly to Room (Offline)
-                repository?.addManualNote(activeProjectId, text)
-                noteText.value = "" // Clear the input field
+                repository?.addManualNote(currentJamId, text) // Use it here!
+                noteText.value = ""
             }
         }
     }

@@ -1,4 +1,6 @@
 package dam.a51319.ludumforge.ui.screens
+import dam.a51319.ludumforge.data.SessionManager
+
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -49,6 +51,8 @@ fun PersonalDashboardScreen(
 
     val hours = timeLeft / 3600
     val minutes = (timeLeft % 3600) / 60
+    val activeJamId by SessionManager.activeJamId.collectAsState()
+
 
     val activeProjects = listOf(
         Project("p1", "Neon Nights", "Cyberpunk", Date(), Date(), 4, ProjectStatus.ACTIVE),

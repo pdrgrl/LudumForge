@@ -16,6 +16,10 @@ import dam.a51319.ludumforge.data.LudumForgeDatabase
 import dam.a51319.ludumforge.data.repositories.ActionLogRepository
 import dam.a51319.ludumforge.data.repositories.AuthRepository
 import dam.a51319.ludumforge.models.User
+import dam.a51319.ludumforge.data.SessionManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 
 
 class TeamWorkspaceViewModel : ViewModel() {
@@ -31,9 +35,6 @@ class TeamWorkspaceViewModel : ViewModel() {
     val teamMembers: StateFlow<List<User>> = _teamMembers.asStateFlow()
 
 
-    // For now, hardcode the active project ID. Later, we'll pass this based on user selection.
-    private val activeProjectId = "p1"
-
     init {
         loadTeamTasks()
         loadTeamMembers()
@@ -45,22 +46,31 @@ class TeamWorkspaceViewModel : ViewModel() {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun loadTeamTasks() {
         viewModelScope.launch {
-            // Collect the real-time Flow from Firestore
-            taskRepository.getTasksForProject(activeProjectId).collect { tasks ->
-                _teamTasks.value = tasks
-            }
+            // This is the magic! It listens to the SessionManager.
+            // If activeJamId changes, it automatically cancels the old Firestore listener and starts a new one!
+            SessionManager.activeJamId
+                .flatMapLatest { jamId ->
+                    if (jamId != null) {
+                        taskRepository.getTasksForProject(jamId)
+                    } else {
+                        flowOf(emptyList()) // No jam selected, return empty tasks
+                    }
+                }
+                .collect { tasks ->
+                    _teamTasks.value = tasks
+                }
         }
     }
-
     fun updateTaskStatus(taskId: String, newStatus: TaskStatus, taskTitle: String, context: Context) {
+        val currentJamId = SessionManager.activeJamId.value ?: return
+
         viewModelScope.launch {
-            // 1. Log it to the local Dev Log FIRST! (Immediate offline feedback)
             val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
             val actionRepo = ActionLogRepository(dao)
 
-            // Get the username (defaulting to the first part of the email if displayName is null)
             val user = FirebaseAuth.getInstance().currentUser
             val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
 
@@ -68,11 +78,10 @@ class TeamWorkspaceViewModel : ViewModel() {
                 TaskStatus.DONE -> "🏁 $userName completed '$taskTitle'"
                 TaskStatus.IN_PROGRESS -> "$userName started '$taskTitle'"
                 TaskStatus.TODO -> "$userName moved '$taskTitle' back to TODO"
-                else -> {"$userName updated '$taskTitle' to ${newStatus.name}"}
             }
-            actionRepo.addSystemEvent(activeProjectId, logMessage)
+            // Use currentJamId here!
+            actionRepo.addSystemEvent(currentJamId, logMessage)
 
-            // 2. Update Firestore (Firebase will handle its own offline queue internally)
             try {
                 taskRepository.updateTaskStatus(taskId, newStatus)
             } catch (e: Exception) {
@@ -81,7 +90,8 @@ class TeamWorkspaceViewModel : ViewModel() {
         }
     }
 
-    fun addTask(title: String, category: TaskCategory, estimatedMinutes: Int, context: Context) {
+    fun addTask(title: String, category: TaskCategory, estimatedMinutes: Int, context: Context, assignedTo: String?) {
+        val currentJamId = SessionManager.activeJamId.value ?: return
         if (title.isBlank()) return
 
         viewModelScope.launch {
@@ -92,11 +102,11 @@ class TeamWorkspaceViewModel : ViewModel() {
             // 1. Log FIRST — works offline immediately
             val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
             val actionRepo = ActionLogRepository(dao)
-            actionRepo.addSystemEvent(activeProjectId, "$userName forged task '$title' [${category.name}]")
+            actionRepo.addSystemEvent(currentJamId, "$userName forged task '$title' [${category.name}]")
 
             // 2. Then push to Firestore
             try {
-                taskRepository.addTask(activeProjectId, title, category, estimatedMinutes, currentUserId)
+                taskRepository.addTask(currentJamId, title, category, estimatedMinutes, assignedTo)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
