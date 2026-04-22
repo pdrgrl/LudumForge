@@ -1,8 +1,8 @@
 package dam.a51319.ludumforge.viewmodels
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.firebase.auth.FirebaseAuth
@@ -19,10 +19,10 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import dam.a51319.ludumforge.data.SessionManager
 
-// Sealed class representing the different states of the AI Generation process
 sealed class RoadmapUiState {
     object Idle : RoadmapUiState()
     object Loading : RoadmapUiState()
+    object Pushing : RoadmapUiState() // NEW: shows progress while writing to Firestore
     data class Success(val tasks: List<Task>) : RoadmapUiState()
     data class Error(val message: String) : RoadmapUiState()
 }
@@ -38,17 +38,14 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
     private val _uiState = MutableStateFlow<RoadmapUiState>(RoadmapUiState.Idle)
     val uiState: StateFlow<RoadmapUiState> = _uiState.asStateFlow()
 
-    // Pass the API Key and Premium status from the UI
     fun onGenerateClicked(userApiKey: String, isPremium: Boolean) {
-        // 1. Get the active Jam. If none is selected, show an error!
         val currentJamId = SessionManager.activeJamId.value ?: run {
             _uiState.value = RoadmapUiState.Error("Please select an active Jam in the Planning tab first.")
             return
         }
 
-        // Tier Check Logic
         val finalApiKey = if (isPremium) {
-            "YOUR_APP_INTERNAL_PREMIUM_API_KEY" // Replace with your actual paid key later
+            "YOUR_APP_INTERNAL_PREMIUM_API_KEY"
         } else {
             userApiKey
         }
@@ -79,7 +76,6 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
                 val response = generativeModel.generateContent(prompt)
                 val rawText = response.text ?: throw Exception("No response from AI.")
 
-                // ROBUST JSON EXTRACTION: Find the first '[' and the last ']'
                 val startIndex = rawText.indexOf('[')
                 val endIndex = rawText.lastIndexOf(']')
 
@@ -93,49 +89,75 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
 
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
-
-                    // Safely parse the category with a fallback to CODE
                     val categoryString = obj.optString("category", "CODE").uppercase()
                     val safeCategory = try {
                         TaskCategory.valueOf(categoryString)
                     } catch (e: Exception) {
-                        TaskCategory.CODE // Fallback if AI hallucinates
+                        TaskCategory.CODE
                     }
 
-                    val task = Task(
-                        id = "ai_${i}",
-                        projectId = currentJamId, // Hardcoded to active project
-                        title = obj.getString("title"),
-                        category = safeCategory, // <-- Use the safe category
-                        estimatedMinutes = obj.getInt("estimatedMinutes"),
-                        status = TaskStatus.TODO
+                    // NO auto-push here anymore — user decides what to keep
+                    generatedTasks.add(
+                        Task(
+                            id = "ai_$i",
+                            projectId = currentJamId,
+                            title = obj.getString("title"),
+                            category = safeCategory,
+                            estimatedMinutes = obj.getInt("estimatedMinutes"),
+                            status = TaskStatus.TODO
+                        )
                     )
-                    generatedTasks.add(task)
-
-                    // Automatically save generated tasks to Firestore!
-                    taskRepository.addTask(task.projectId, task.title, task.category, task.estimatedMinutes, null)
                 }
 
                 _uiState.value = RoadmapUiState.Success(generatedTasks)
-
-                // Log the event to Room immediately
-                try {
-                    val context = getApplication<Application>().applicationContext
-                    val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
-                    val actionRepo = ActionLogRepository(dao)
-                    val user = FirebaseAuth.getInstance().currentUser
-                    val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
-                    actionRepo.addSystemEvent(
-                        currentJamId,
-                        "$userName generated AI roadmap for '${gameTitle.value}' — ${generatedTasks.size} tasks created"
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
 
             } catch (e: Exception) {
                 _uiState.value = RoadmapUiState.Error("AI Generation Failed: ${e.localizedMessage}")
             }
         }
+    }
+
+    // Called with only the tasks the user chose to keep
+    fun pushSelectedTasksToWorkspace(tasks: List<Task>, context: Context) {
+        val currentJamId = SessionManager.activeJamId.value ?: return
+        if (tasks.isEmpty()) return
+
+        viewModelScope.launch {
+            _uiState.value = RoadmapUiState.Pushing
+
+            tasks.forEach { task ->
+                taskRepository.addTask(
+                    currentJamId,
+                    task.title,
+                    task.category,
+                    task.estimatedMinutes,
+                    null
+                )
+            }
+
+            // Log it
+            try {
+                val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
+                val actionRepo = ActionLogRepository(dao)
+                val user = FirebaseAuth.getInstance().currentUser
+                val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
+                actionRepo.addSystemEvent(
+                    currentJamId,
+                    "⚡ $userName forged ${tasks.size} AI tasks into the workspace"
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            // Reset everything cleanly
+            _uiState.value = RoadmapUiState.Idle
+            gameTitle.value = ""
+            teamSize.value = ""
+            duration.value = ""
+        }
+    }
+
+    fun discard() {
+        _uiState.value = RoadmapUiState.Idle
     }
 }
