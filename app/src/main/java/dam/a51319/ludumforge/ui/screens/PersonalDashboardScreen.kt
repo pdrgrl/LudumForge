@@ -50,18 +50,6 @@ fun PersonalDashboardScreen(
     val hours = timeLeft / 3600
     val minutes = (timeLeft % 3600) / 60
 
-
-    val activeProjects = listOf(
-        Project("p1", "Neon Nights", "Cyberpunk", teamSize = 4, status = ProjectStatus.ACTIVE,),
-        Project(
-            "p2",
-            "Cozy Tavern",
-            "Fantasy/Management",
-            teamSize = 2,
-            status = ProjectStatus.ACTIVE,
-        )
-    )
-
     Scaffold(
         containerColor = SurfaceBase
     ) { innerPadding ->
@@ -92,18 +80,15 @@ fun PersonalDashboardScreen(
                     contentPadding = PaddingValues(horizontal = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Show a "Create Jam" card first if no jams exist
-                    if (myJams.isEmpty()) {
-                        item {
-                            CreateJamCard(onCreate = { viewModel.createNewJam(it, "") })
-                        }
-                    }
                     items(myJams) { project ->
                         ActiveProjectCard(
                             project = project,
-                            isActive = project.id == activeJamId, // Pass active state!
-                            onSelectJam = { SessionManager.setActiveJam(project.id) } // Wire the click!
+                            isActive = project.id == activeJamId,
+                            onSelectJam = { SessionManager.setActiveJam(project.id, project.name) }
                         )
+                    }
+                    item {
+                        CreateJamCard(onCreate = { viewModel.createNewJam(it, "") })
                     }
                 }
                 Spacer(modifier = Modifier.height(40.dp))
@@ -118,7 +103,7 @@ fun PersonalDashboardScreen(
 
             items(priorityTasks) { task ->
                 Box(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    PriorityTaskCard(task = task, projectName = activeProjects.find { it.id == task.projectId }?.name ?: "Unknown Project")
+                    PriorityTaskCard(task = task, projectName = myJams.find { it.id == task.projectId }?.name ?: "Unknown Project")
                 }
             }
         }

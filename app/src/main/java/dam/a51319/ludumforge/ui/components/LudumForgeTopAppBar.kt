@@ -17,12 +17,18 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import dam.a51319.ludumforge.data.SessionManager
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LudumForgeTopAppBar(currentUser: User?, onLogout: () -> Unit) {
     var showMenu by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+
+    // Observe the active jam name directly from SessionManager
+    val activeJamId by SessionManager.activeJamId.collectAsState()
+    val activeJamName by SessionManager.activeJamName.collectAsState() // We'll add this below
 
     val context = LocalContext.current
     val sharedPrefs = remember { context.getSharedPreferences("LudumForgePrefs", Context.MODE_PRIVATE) }
@@ -33,7 +39,19 @@ fun LudumForgeTopAppBar(currentUser: User?, onLogout: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.BlurOn, contentDescription = "Logo", tint = PrimaryBlack, modifier = Modifier.size(28.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("LudumForge", style = MaterialTheme.typography.titleLarge, color = PrimaryBlack)
+                Column {
+                    Text("LudumForge", style = MaterialTheme.typography.titleLarge, color = PrimaryBlack, fontWeight = FontWeight.Bold)
+                    // Show active jam name if one is selected
+                    if (!activeJamName.isNullOrBlank()) {
+                        Text(
+                            "▸ $activeJamName",
+                            fontSize = 11.sp,
+                            color = SecondaryGray,
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 0.3.sp
+                        )
+                    }
+                }
             }
         },
         actions = {
