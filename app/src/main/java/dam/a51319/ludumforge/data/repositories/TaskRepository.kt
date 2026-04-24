@@ -101,4 +101,25 @@ class TaskRepository {
             }
         awaitClose { listener.remove() }
     }
+
+    suspend fun deleteTasksForProject(projectId: String) {
+        try {
+            // Fetch all task docs for this project in one query
+            val snapshot = db.collection("tasks")
+                .whereEqualTo("projectId", projectId)
+                .get()
+                .await()
+
+            if (snapshot.isEmpty) return
+
+            // Firestore batch writes are limited to 500 ops — chunk just in case
+            snapshot.documents.chunked(400).forEach { chunk ->
+                val batch = db.batch()
+                chunk.forEach { doc -> batch.delete(doc.reference) }
+                batch.commit().await()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

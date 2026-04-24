@@ -49,6 +49,9 @@ fun PersonalDashboardScreen(
 
     val hours = timeLeft / 3600
     val minutes = (timeLeft % 3600) / 60
+
+    val timeDisplay = if (timeLeft < 0L) "--" else "${hours}h ${minutes}m"
+
     val completionRatios by viewModel.completionRatios.collectAsState()
 
     Scaffold(
@@ -66,7 +69,7 @@ fun PersonalDashboardScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        StatCard(modifier = Modifier.weight(1f), value = "${hours}h ${minutes}m", label = "Time\nRemaining")
+                        StatCard(modifier = Modifier.weight(1f), value = timeDisplay, label = "Time\nRemaining")
                         StatCard(modifier = Modifier.weight(1f), value = "${priorityTasks.size}", label = "Tasks\nDue")
                         StatCard(modifier = Modifier.weight(1f), value = "84%", label = "Avg.\nVelocity")
                     }
@@ -92,7 +95,9 @@ fun PersonalDashboardScreen(
                         )
                     }
                     item {
-                        CreateJamCard(onCreate = { viewModel.createNewJam(it, "") })
+                        CreateJamCard(onCreate = { name, days ->
+                            viewModel.createNewJam(name, "", days)
+                        })
                     }
                 }
                 Spacer(modifier = Modifier.height(40.dp))
@@ -351,9 +356,12 @@ fun ActiveProjectCard(
 }
 
 @Composable
-fun CreateJamCard(onCreate: (String) -> Unit) {
+fun CreateJamCard(onCreate: (String, Int) -> Unit) { // now takes durationDays too
     var showDialog by remember { mutableStateOf(false) }
     var jamName by remember { mutableStateOf("") }
+    var selectedDays by remember { mutableStateOf(7) }
+    val durationOptions = listOf(1, 2, 3, 7, 14, 30, 48) // 48h classic game jam option
+    var showDurationMenu by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -380,16 +388,65 @@ fun CreateJamCard(onCreate: (String) -> Unit) {
             containerColor = SurfaceContainerLowest,
             title = { Text("Forge New Jam", fontWeight = FontWeight.Bold, color = PrimaryBlack) },
             text = {
-                OutlinedTextField(
-                    value = jamName,
-                    onValueChange = { jamName = it },
-                    label = { Text("Jam Name") },
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    OutlinedTextField(
+                        value = jamName,
+                        onValueChange = { jamName = it },
+                        label = { Text("Jam Name") },
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
+                    )
+
+                    // Duration picker
+                    Text("Duration", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                    Box {
+                        OutlinedButton(
+                            onClick = { showDurationMenu = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            border = BorderStroke(1.dp, GhostBorder),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                if (selectedDays == 1) "1 day"
+                                else if (selectedDays < 7) "$selectedDays days"
+                                else if (selectedDays == 7) "1 week"
+                                else if (selectedDays == 14) "2 weeks"
+                                else if (selectedDays == 30) "1 month"
+                                else "${selectedDays}h (classic jam)",
+                                color = PrimaryBlack
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = SecondaryGray)
+                        }
+                        DropdownMenu(
+                            expanded = showDurationMenu,
+                            onDismissRequest = { showDurationMenu = false },
+                            modifier = Modifier.background(SurfaceContainerLowest)
+                        ) {
+                            durationOptions.forEach { days ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            when (days) {
+                                                1 -> "1 day"
+                                                7 -> "1 week"
+                                                14 -> "2 weeks"
+                                                30 -> "1 month"
+                                                48 -> "48h (classic jam)"
+                                                else -> "$days days"
+                                            }
+                                        )
+                                    },
+                                    onClick = { selectedDays = days; showDurationMenu = false }
+                                )
+                            }
+                        }
+                    }
+                }
             },
             confirmButton = {
                 Button(
-                    onClick = { onCreate(jamName); showDialog = false; jamName = "" },
+                    onClick = { onCreate(jamName, selectedDays); showDialog = false; jamName = ""; selectedDays = 7 },
+                    enabled = jamName.isNotBlank(),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
                 ) { Text("Create", color = Color.White) }
             },

@@ -14,6 +14,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 
 class PersonalDashboardViewModel : ViewModel() {
 
@@ -41,7 +45,7 @@ class PersonalDashboardViewModel : ViewModel() {
         loadMyTasks()
         loadMyJams()
         loadAllTasksForJams()
-        startTimer()
+        observeActiveJamTimer()
     }
 
     private fun loadMyJams() {
@@ -53,14 +57,12 @@ class PersonalDashboardViewModel : ViewModel() {
         }
     }
 
-    fun createNewJam(name: String, theme: String) {
+    fun createNewJam(name: String, theme: String, durationDays: Int = 7) {
         if (currentUserId == null || name.isBlank()) return
         viewModelScope.launch {
             try {
-                projectRepository.createJam(name, theme, 1, currentUserId)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+                projectRepository.createJam(name, theme, durationDays, 1, currentUserId)
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -73,14 +75,33 @@ class PersonalDashboardViewModel : ViewModel() {
         }
     }
 
-    private fun startTimer() {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeActiveJamTimer() {
         viewModelScope.launch {
-            while (_timeLeftInSeconds.value > 0) {
-                delay(1000L)
-                _timeLeftInSeconds.value -= 1
-            }
+            // Whenever the active jam ID or the jam list changes, recompute the deadline
+            SessionManager.activeJamId
+                .combine(_myJams) { activeId, jams -> activeId to jams }
+                .collect { (activeId, jams) ->
+                    val activeJam = jams.find { it.id == activeId }
+                    val endTimeMs = activeJam?.endDate?.time
+
+                    if (endTimeMs == null) {
+                        // No jam selected — show dashes by emitting a sentinel value
+                        _timeLeftInSeconds.value = -1L
+                    } else {
+                        // Cancel the old countdown and start a fresh one from the real deadline
+                        val secondsLeft = ((endTimeMs - System.currentTimeMillis()) / 1000L).coerceAtLeast(0L)
+                        _timeLeftInSeconds.value = secondsLeft
+                        // Tick down every second
+                        while (_timeLeftInSeconds.value > 0) {
+                            delay(1000L)
+                            _timeLeftInSeconds.value = (_timeLeftInSeconds.value - 1L).coerceAtLeast(0L)
+                        }
+                    }
+                }
         }
     }
+
     fun updateTaskStatus(taskId: String, newTaskStatus: TaskStatus) {
         viewModelScope.launch {
             try {
@@ -107,8 +128,13 @@ class PersonalDashboardViewModel : ViewModel() {
     fun deleteJam(projectId: String) {
         viewModelScope.launch {
             try {
+                // 1. Delete all tasks belonging to this jam first
+                taskRepository.deleteTasksForProject(projectId)
+
+                // 2. Then delete the jam itself
                 projectRepository.deleteJam(projectId)
-                // If the deleted jam was active, clear the session
+
+                // 3. Clear session if this was the active jam
                 if (SessionManager.activeJamId.value == projectId) {
                     SessionManager.clearActiveJam()
                 }

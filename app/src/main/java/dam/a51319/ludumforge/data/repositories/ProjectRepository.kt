@@ -50,12 +50,12 @@ class ProjectRepository {
             .await()
     }
     // Create a new Jam
-    suspend fun createJam(name: String, theme: String, teamSize: Int, creatorId: String): String {
+    suspend fun createJam(name: String, theme: String, durationDays: Int, teamSize: Int, creatorId: String): String {
         val newJam = hashMapOf(
             "name" to name,
             "theme" to theme,
             "startDate" to Date(),
-            "endDate" to Date(System.currentTimeMillis() + (7L * 24 * 60 * 60 * 1000)),
+            "endDate" to Date(System.currentTimeMillis() + (durationDays.toLong() * 24 * 60 * 60 * 1000)),
             "teamSize" to teamSize,
             "status" to ProjectStatus.PLANNING.name,
             "creatorId" to creatorId
