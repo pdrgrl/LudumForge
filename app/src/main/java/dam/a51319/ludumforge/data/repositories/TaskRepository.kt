@@ -13,16 +13,11 @@ class TaskRepository {
 
     private val db = FirebaseFirestore.getInstance()
 
-    // Real-time listener for a specific project's tasks
     fun getTasksForProject(projectId: String): Flow<List<Task>> = callbackFlow {
         val listener = db.collection("tasks")
             .whereEqualTo("projectId", projectId)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-
+                if (error != null) { close(error); return@addSnapshotListener }
                 if (snapshot != null) {
                     val tasks = snapshot.documents.map { doc ->
                         Task(
@@ -38,20 +33,31 @@ class TaskRepository {
                     trySend(tasks)
                 }
             }
-
-        // Remove listener when the flow is closed (e.g., user leaves screen)
         awaitClose { listener.remove() }
     }
 
-    // Update just the status of a task (for drag-and-drop / clicking)
     suspend fun updateTaskStatus(taskId: String, newStatus: TaskStatus) {
         try {
             db.collection("tasks").document(taskId)
                 .update("status", newStatus.name)
                 .await()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    suspend fun updateTask(taskId: String, updates: Map<String, Any?>) {
+        try {
+            db.collection("tasks").document(taskId)
+                .update(updates)
+                .await()
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    suspend fun deleteTask(taskId: String) {
+        try {
+            db.collection("tasks").document(taskId)
+                .delete()
+                .await()
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     suspend fun addTask(
@@ -68,22 +74,17 @@ class TaskRepository {
                 "category" to category.name,
                 "status" to TaskStatus.TODO.name,
                 "estimatedMinutes" to estimatedMinutes,
-                "assignedTo" to assignedTo // Now it saves the User ID!
+                "assignedTo" to assignedTo
             )
             db.collection("tasks").add(newTask).await()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     fun getTasksForUser(userId: String): Flow<List<Task>> = callbackFlow {
         val listener = db.collection("tasks")
             .whereEqualTo("assignedTo", userId)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
+                if (error != null) { close(error); return@addSnapshotListener }
                 if (snapshot != null) {
                     val tasks = snapshot.documents.map { doc ->
                         Task(
@@ -104,22 +105,16 @@ class TaskRepository {
 
     suspend fun deleteTasksForProject(projectId: String) {
         try {
-            // Fetch all task docs for this project in one query
             val snapshot = db.collection("tasks")
                 .whereEqualTo("projectId", projectId)
                 .get()
                 .await()
-
             if (snapshot.isEmpty) return
-
-            // Firestore batch writes are limited to 500 ops — chunk just in case
             snapshot.documents.chunked(400).forEach { chunk ->
                 val batch = db.batch()
                 chunk.forEach { doc -> batch.delete(doc.reference) }
                 batch.commit().await()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 }
