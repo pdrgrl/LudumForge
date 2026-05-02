@@ -9,9 +9,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import dam.a51319.ludumforge.models.User
+import dam.a51319.ludumforge.models.UserPlan
 import dam.a51319.ludumforge.models.UserRole
+import kotlinx.coroutines.tasks.await
 
 class AuthRepository {
 
@@ -24,21 +25,16 @@ class AuthRepository {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             Result.success(result.user!!)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     suspend fun signUp(email: String, password: String): Result<FirebaseUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user!!
-            // Default username to the part of the email before the @
             saveUserToFirestore(user, username = email.substringBefore("@"))
             Result.success(user)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser> {
@@ -46,31 +42,21 @@ class AuthRepository {
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(webClientId)
-//                .setAutoSelectEnabled(true)
                 .build()
-
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(googleIdOption)
                 .build()
-
             val credentialManager = CredentialManager.create(context)
             val response = credentialManager.getCredential(context, request)
-
             val googleIdToken = GoogleIdTokenCredential.createFrom(response.credential.data).idToken
             val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-
             val result = auth.signInWithCredential(firebaseCredential).await()
             val user = result.user!!
-
-            // Only write to Firestore if this is a brand-new Google account signup
             if (result.additionalUserInfo?.isNewUser == true) {
                 saveUserToFirestore(user, username = user.displayName ?: "New User")
             }
-
             Result.success(user)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     private suspend fun saveUserToFirestore(user: FirebaseUser, username: String) {
@@ -78,9 +64,9 @@ class AuthRepository {
             "id" to user.uid,
             "email" to (user.email ?: ""),
             "username" to username,
-            "role" to "DEVELOPER" // Default role
+            "role" to "DEVELOPER",
+            "plan" to "FREE"
         )
-        // Save to "users" collection using the UID as the document ID
         db.collection("users").document(user.uid).set(userMap).await()
     }
 
@@ -89,38 +75,36 @@ class AuthRepository {
         return try {
             val docRef = db.collection("users").document(firebaseUser.uid)
             val snapshot = docRef.get().await()
-
             if (snapshot.exists()) {
                 User(
                     id = snapshot.getString("id") ?: firebaseUser.uid,
                     username = snapshot.getString("username") ?: "Unknown",
                     email = snapshot.getString("email") ?: firebaseUser.email ?: "",
-                    role = UserRole.valueOf(snapshot.getString("role") ?: "DEVELOPER")
+                    role = UserRole.valueOf(snapshot.getString("role") ?: "DEVELOPER"),
+                    plan = UserPlan.valueOf(snapshot.getString("plan") ?: "FREE")
                 )
             } else {
-                // Document doesn't exist (e.g., old Google login). Create it now!
                 val email = firebaseUser.email ?: ""
-                val defaultUsername = firebaseUser.displayName ?: if (email.contains("@")) email.substringBefore("@") else "Architect"
-
+                val defaultUsername = firebaseUser.displayName
+                    ?: if (email.contains("@")) email.substringBefore("@") else "Architect"
                 val newUser = User(
                     id = firebaseUser.uid,
                     username = defaultUsername,
                     email = email,
-                    role = UserRole.DEVELOPER
+                    role = UserRole.DEVELOPER,
+                    plan = UserPlan.FREE
                 )
-
                 val userMap = hashMapOf(
                     "id" to newUser.id,
                     "email" to newUser.email,
                     "username" to newUser.username,
-                    "role" to newUser.role.name
+                    "role" to newUser.role.name,
+                    "plan" to newUser.plan.name
                 )
                 docRef.set(userMap).await()
                 newUser
             }
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 
     suspend fun getAllUsers(): List<User> {
@@ -131,15 +115,23 @@ class AuthRepository {
                     id = doc.getString("id") ?: doc.id,
                     username = doc.getString("username") ?: "Unknown",
                     email = doc.getString("email") ?: "",
-                    role = UserRole.valueOf(doc.getString("role") ?: "DEVELOPER")
+                    role = UserRole.valueOf(doc.getString("role") ?: "DEVELOPER"),
+                    plan = UserPlan.valueOf(doc.getString("plan") ?: "FREE")
                 )
             }
-        } catch (e: Exception) {
-            emptyList()
-        }
+        } catch (e: Exception) { emptyList() }
     }
 
-    fun signOut() {
-        try { auth.signOut() } catch (_: Exception) {}
+    /** Flip the caller's Firestore doc to PREMIUM. Call this after payment confirmation. */
+    suspend fun upgradeToPremium(): Result<Unit> {
+        val uid = auth.currentUser?.uid ?: return Result.failure(Exception("Not signed in"))
+        return try {
+            db.collection("users").document(uid)
+                .update("plan", "PREMIUM")
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
     }
+
+    fun signOut() { try { auth.signOut() } catch (_: Exception) {} }
 }

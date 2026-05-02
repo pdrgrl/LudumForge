@@ -7,11 +7,16 @@ enum class UserRole {
     ADMIN, DEVELOPER, ARTIST, AUDIO_ENGINEER, GAME_DESIGNER
 }
 
+enum class UserPlan {
+    FREE, PREMIUM
+}
+
 @Entity(tableName = "users")
 data class User(
     @PrimaryKey
     val id: String = "",
     val username: String = "",
     val email: String = "",
-    val role: UserRole = UserRole.DEVELOPER
+    val role: UserRole = UserRole.DEVELOPER,
+    val plan: UserPlan = UserPlan.FREE
 )

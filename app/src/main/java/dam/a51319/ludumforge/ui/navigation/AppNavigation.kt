@@ -15,23 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import dam.a51319.ludumforge.ui.screens.LoginScreen
-import dam.a51319.ludumforge.ui.screens.OfflineTerminalScreen
-import dam.a51319.ludumforge.ui.screens.PersonalDashboardScreen
-import dam.a51319.ludumforge.ui.screens.PublicJamsScreen
-import dam.a51319.ludumforge.ui.screens.RegisterScreen
-import dam.a51319.ludumforge.ui.screens.RoadmapGeneratorScreen
-import dam.a51319.ludumforge.ui.screens.TeamWorkspaceScreen
 import com.google.firebase.auth.FirebaseAuth
 import dam.a51319.ludumforge.ui.components.LudumForgeTopAppBar
+import dam.a51319.ludumforge.ui.screens.*
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 object Routes {
     const val LOGIN = "login"
@@ -41,6 +35,7 @@ object Routes {
     const val PUBLIC_JAMS = "public_jams"
     const val ROADMAP_GENERATOR = "roadmap_generator"
     const val OFFLINE_TERMINAL = "offline_terminal"
+    const val SUBSCRIPTION = "subscription"
 }
 
 @Composable
@@ -48,14 +43,19 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
     val currentUser by authViewModel.currentUser.collectAsState()
     val startDest = if (currentUser != null) Routes.PERSONAL_DASHBOARD else Routes.LOGIN
 
+    val mainTabs = listOf(
+        Routes.PERSONAL_DASHBOARD,
+        Routes.ROADMAP_GENERATOR,
+        Routes.TEAM_WORKSPACE,
+        Routes.PUBLIC_JAMS,
+        Routes.OFFLINE_TERMINAL
+    )
 
     Scaffold(
         topBar = {
-            // Show the top bar on every screen EXCEPT Login and Register
             if (currentRoute != Routes.LOGIN && currentRoute != Routes.REGISTER) {
                 LudumForgeTopAppBar(
                     currentUser = currentUser,
@@ -64,35 +64,30 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
+                    },
+                    onNavigateToSubscription = {
+                        navController.navigate(Routes.SUBSCRIPTION)
                     }
                 )
             }
         },
         bottomBar = {
-            val mainTabs = listOf(
-                Routes.PERSONAL_DASHBOARD,
-                Routes.ROADMAP_GENERATOR,
-                Routes.TEAM_WORKSPACE,
-                Routes.PUBLIC_JAMS,
-                Routes.OFFLINE_TERMINAL
-            )
             if (currentRoute in mainTabs) {
                 LudumForgeBottomBar(navController = navController, currentRoute = currentRoute)
             }
         }
-    )  { innerPadding ->
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = startDest,
-            modifier = Modifier.padding(innerPadding) // This padding now accounts for the global top bar!
+            modifier = Modifier.padding(innerPadding)
         ) {
-            // AUTH ROUTES
             composable(Routes.LOGIN) {
                 LoginScreen(
                     onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
                     onLoginSuccess = {
                         navController.navigate(Routes.PERSONAL_DASHBOARD) {
-                            popUpTo(Routes.LOGIN) { inclusive = true } // Clear Login from stack
+                            popUpTo(Routes.LOGIN) { inclusive = true }
                         }
                     }
                 )
@@ -107,13 +102,10 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
                     }
                 )
             }
-
-            // APP ROUTES
             composable(Routes.PERSONAL_DASHBOARD) {
                 PersonalDashboardScreen(
                     onLogout = {
                         navController.navigate(Routes.LOGIN) {
-                            // Clear the entire navigation history so the user can't press 'Back' to return
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
                     }
@@ -123,6 +115,11 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
             composable(Routes.PUBLIC_JAMS) { PublicJamsScreen() }
             composable(Routes.ROADMAP_GENERATOR) { RoadmapGeneratorScreen() }
             composable(Routes.OFFLINE_TERMINAL) { OfflineTerminalScreen() }
+            composable(Routes.SUBSCRIPTION) {
+                SubscriptionScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
@@ -138,81 +135,59 @@ fun LudumForgeBottomBar(navController: NavHostController, currentRoute: String?)
         contentColor = secondaryGray,
         tonalElevation = 8.dp
     ) {
-        // 1. Planning (Personal Dashboard)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
             label = { Text("Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.PERSONAL_DASHBOARD,
             onClick = { navigateToTab(navController, Routes.PERSONAL_DASHBOARD) },
             colors = NavigationBarItemDefaults.colors(
-                indicatorColor = surfaceContainerHigh,
-                selectedIconColor = primaryColor,
-                selectedTextColor = primaryColor,
-                unselectedIconColor = secondaryGray,
-                unselectedTextColor = secondaryGray
+                indicatorColor = surfaceContainerHigh, selectedIconColor = primaryColor,
+                selectedTextColor = primaryColor, unselectedIconColor = secondaryGray, unselectedTextColor = secondaryGray
             )
         )
-        // 2. Workspace (Team Workspace)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Groups, contentDescription = "Workspace") },
             label = { Text("Workspace", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.TEAM_WORKSPACE,
             onClick = { navigateToTab(navController, Routes.TEAM_WORKSPACE) },
             colors = NavigationBarItemDefaults.colors(
-                indicatorColor = surfaceContainerHigh,
-                selectedIconColor = primaryColor,
-                selectedTextColor = primaryColor,
-                unselectedIconColor = secondaryGray,
-                unselectedTextColor = secondaryGray
+                indicatorColor = surfaceContainerHigh, selectedIconColor = primaryColor,
+                selectedTextColor = primaryColor, unselectedIconColor = secondaryGray, unselectedTextColor = secondaryGray
             )
         )
-        // 3. AI Roadmap
         NavigationBarItem(
             icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "Roadmap") },
             label = { Text("AI Roadmap", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.ROADMAP_GENERATOR,
             onClick = { navigateToTab(navController, Routes.ROADMAP_GENERATOR) },
             colors = NavigationBarItemDefaults.colors(
-                indicatorColor = surfaceContainerHigh,
-                selectedIconColor = primaryColor,
-                selectedTextColor = primaryColor,
-                unselectedIconColor = secondaryGray,
-                unselectedTextColor = secondaryGray
+                indicatorColor = surfaceContainerHigh, selectedIconColor = primaryColor,
+                selectedTextColor = primaryColor, unselectedIconColor = secondaryGray, unselectedTextColor = secondaryGray
             )
         )
-        // 4. Explore (Public Jams)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = "Explore") },
             label = { Text("Explore", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.PUBLIC_JAMS,
             onClick = { navigateToTab(navController, Routes.PUBLIC_JAMS) },
             colors = NavigationBarItemDefaults.colors(
-                indicatorColor = surfaceContainerHigh,
-                selectedIconColor = primaryColor,
-                selectedTextColor = primaryColor,
-                unselectedIconColor = secondaryGray,
-                unselectedTextColor = secondaryGray
+                indicatorColor = surfaceContainerHigh, selectedIconColor = primaryColor,
+                selectedTextColor = primaryColor, unselectedIconColor = secondaryGray, unselectedTextColor = secondaryGray
             )
         )
-        // 5. Terminal (Offline Terminal)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Terminal, contentDescription = "Terminal") },
             label = { Text("Terminal", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.OFFLINE_TERMINAL,
             onClick = { navigateToTab(navController, Routes.OFFLINE_TERMINAL) },
             colors = NavigationBarItemDefaults.colors(
-                indicatorColor = surfaceContainerHigh,
-                selectedIconColor = primaryColor,
-                selectedTextColor = primaryColor,
-                unselectedIconColor = secondaryGray,
-                unselectedTextColor = secondaryGray
+                indicatorColor = surfaceContainerHigh, selectedIconColor = primaryColor,
+                selectedTextColor = primaryColor, unselectedIconColor = secondaryGray, unselectedTextColor = secondaryGray
             )
         )
     }
 }
 
-
-// Helper function to keep the onClick clean
 private fun navigateToTab(navController: NavHostController, route: String) {
     navController.navigate(route) {
         popUpTo(navController.graph.findStartDestination().id) { saveState = true }

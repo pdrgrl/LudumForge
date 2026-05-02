@@ -39,22 +39,36 @@ import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
 fun PersonalDashboardScreen(
     viewModel: PersonalDashboardViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToSubscription: () -> Unit = {}
 ) {
     val timeLeft by viewModel.timeLeftInSeconds.collectAsState()
     val priorityTasks by viewModel.myTasks.collectAsState()
     val activeJamId by SessionManager.activeJamId.collectAsState()
-
     val myJams by viewModel.myJams.collectAsState()
-
     val hours = timeLeft / 3600
     val minutes = (timeLeft % 3600) / 60
-
     val timeDisplay = if (timeLeft < 0L) "--" else "${hours}h ${minutes}m"
-
     val completionRatios by viewModel.completionRatios.collectAsState()
+    val currentPlan by viewModel.currentPlan.collectAsState()
+
+    // ── Jam limit snackbar ───────────────────────────────────────────────────
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.jamLimitReached.collect {
+            val result = snackbarHostState.showSnackbar(
+                message = "Free plan limit reached (2 jams/month)",
+                actionLabel = "Upgrade",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                onNavigateToSubscription()
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = SurfaceBase
     ) { innerPadding ->
         LazyColumn(
@@ -88,16 +102,16 @@ fun PersonalDashboardScreen(
                         ActiveProjectCard(
                             project = project,
                             isActive = project.id == activeJamId,
-                            completionRatio = completionRatios[project.id] ?: 0f, // ← NEW
+                            completionRatio = completionRatios[project.id] ?: 0f,
                             onSelectJam = { SessionManager.setActiveJam(project.id, project.name) },
                             onRename = { newName -> viewModel.renameJam(project.id, newName) },
                             onDelete = { viewModel.deleteJam(project.id) }
                         )
                     }
                     item {
-                        CreateJamCard(onCreate = { name, days ->
-                            viewModel.createNewJam(name, "", days)
-                        })
+                        CreateJamCard(
+                            onCreate = { name, days -> viewModel.createNewJam(name, "", days) }
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(40.dp))
@@ -115,9 +129,7 @@ fun PersonalDashboardScreen(
                     PriorityTaskCard(
                         task = task,
                         projectName = myJams.find { it.id == task.projectId }?.name ?: "Unknown Project",
-                        onStatusChange = { taskId, newStatus ->
-                            viewModel.updateTaskStatus(taskId, newStatus)
-                        }
+                        onStatusChange = { taskId, newStatus -> viewModel.updateTaskStatus(taskId, newStatus) }
                     )
                 }
             }
@@ -148,7 +160,7 @@ fun StatCard(modifier: Modifier = Modifier, value: String, label: String) {
 fun ActiveProjectCard(
     project: Project,
     isActive: Boolean = false,
-    completionRatio: Float = 0f, // ← NEW
+    completionRatio: Float = 0f,
     onSelectJam: () -> Unit = {},
     onRename: (String) -> Unit = {},
     onDelete: () -> Unit = {}
@@ -169,7 +181,6 @@ fun ActiveProjectCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Spacer(modifier = Modifier.height(20.dp))
-            // ── Progress Bar ────────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -194,8 +205,6 @@ fun ActiveProjectCard(
                 color = if (isActive) Color.White else PrimaryBlack,
                 trackColor = if (isActive) Color.White.copy(alpha = 0.2f) else SurfaceContainerHigh
             )
-            // ── End Progress Bar ────────────────────────────────────────
-
             Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -215,16 +224,10 @@ fun ActiveProjectCard(
                         letterSpacing = 0.5.sp
                     )
                 }
-
-                // ── Three-dot menu ──────────────────────────────────────
                 Box {
-                    IconButton(
-                        onClick = { showOptionsMenu = true },
-                        modifier = Modifier.size(24.dp)
-                    ) {
+                    IconButton(onClick = { showOptionsMenu = true }, modifier = Modifier.size(24.dp)) {
                         Icon(
-                            Icons.Default.MoreHoriz,
-                            contentDescription = "Options",
+                            Icons.Default.MoreHoriz, contentDescription = "Options",
                             tint = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
                         )
                     }
@@ -235,36 +238,23 @@ fun ActiveProjectCard(
                     ) {
                         DropdownMenuItem(
                             text = { Text("Rename", color = PrimaryBlack) },
-                            onClick = {
-                                renameInput = project.name
-                                showOptionsMenu = false
-                                showRenameDialog = true
-                            },
+                            onClick = { renameInput = project.name; showOptionsMenu = false; showRenameDialog = true },
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(16.dp)) }
                         )
                         DropdownMenuItem(
                             text = { Text("Delete", color = ErrorRed) },
-                            onClick = {
-                                showOptionsMenu = false
-                                showDeleteDialog = true
-                            },
+                            onClick = { showOptionsMenu = false; showDeleteDialog = true },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = ErrorRed, modifier = Modifier.size(16.dp)) }
                         )
                     }
                 }
-//                Icon(
-//                    Icons.Default.MoreHoriz,
-//                    contentDescription = "Options",
-//                    tint = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
-//                )
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 project.name,
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
                 color = if (isActive) Color.White else PrimaryBlack,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -274,33 +264,26 @@ fun ActiveProjectCard(
                 fontSize = 13.sp
             )
             Spacer(modifier = Modifier.height(24.dp))
-            // "Manage Workspace" button — now wired to set the active jam
             Button(
                 onClick = { onSelectJam() },
                 modifier = Modifier.fillMaxWidth().height(44.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isActive) Color.White else Color.Transparent
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = if (isActive) Color.White else Color.Transparent),
                 contentPadding = PaddingValues()
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (isActive) Modifier.background(Color.Transparent)
-                            else Modifier.background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
-                        ),
+                    modifier = Modifier.fillMaxSize().then(
+                        if (isActive) Modifier.background(Color.Transparent)
+                        else Modifier.background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
+                    ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         if (isActive) "✓ Selected" else "Select Jam",
                         color = if (isActive) PrimaryBlack else Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontWeight = FontWeight.Bold, fontSize = 13.sp
                     )
                 }
-                // Rename Dialog
                 if (showRenameDialog) {
                     AlertDialog(
                         onDismissRequest = { showRenameDialog = false },
@@ -308,8 +291,7 @@ fun ActiveProjectCard(
                         title = { Text("Rename Jam", fontWeight = FontWeight.Bold, color = PrimaryBlack) },
                         text = {
                             OutlinedTextField(
-                                value = renameInput,
-                                onValueChange = { renameInput = it },
+                                value = renameInput, onValueChange = { renameInput = it },
                                 label = { Text("Jam Name") },
                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
                             )
@@ -321,13 +303,9 @@ fun ActiveProjectCard(
                                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
                             ) { Text("Save", color = Color.White) }
                         },
-                        dismissButton = {
-                            TextButton(onClick = { showRenameDialog = false }) { Text("Cancel", color = PrimaryBlack) }
-                        }
+                        dismissButton = { TextButton(onClick = { showRenameDialog = false }) { Text("Cancel", color = PrimaryBlack) } }
                     )
                 }
-
-                // Delete Confirmation Dialog
                 if (showDeleteDialog) {
                     AlertDialog(
                         onDismissRequest = { showDeleteDialog = false },
@@ -345,9 +323,7 @@ fun ActiveProjectCard(
                                 colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
                             ) { Text("Delete", color = Color.White) }
                         },
-                        dismissButton = {
-                            TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel", color = PrimaryBlack) }
-                        }
+                        dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel", color = PrimaryBlack) } }
                     )
                 }
             }
@@ -356,17 +332,15 @@ fun ActiveProjectCard(
 }
 
 @Composable
-fun CreateJamCard(onCreate: (String, Int) -> Unit) { // now takes durationDays too
+fun CreateJamCard(onCreate: (String, Int) -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var jamName by remember { mutableStateOf("") }
     var selectedDays by remember { mutableStateOf(7) }
-    val durationOptions = listOf(1, 2, 3, 7, 14, 30, 48) // 48h classic game jam option
+    val durationOptions = listOf(1, 2, 3, 7, 14, 30, 48)
     var showDurationMenu by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
-            .width(220.dp)
-            .clickable { showDialog = true },
+        modifier = Modifier.width(220.dp).clickable { showDialog = true },
         colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, GhostBorder)
@@ -390,13 +364,10 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) { // now takes durationDays t
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     OutlinedTextField(
-                        value = jamName,
-                        onValueChange = { jamName = it },
+                        value = jamName, onValueChange = { jamName = it },
                         label = { Text("Jam Name") },
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
                     )
-
-                    // Duration picker
                     Text("Duration", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                     Box {
                         OutlinedButton(
@@ -406,12 +377,10 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) { // now takes durationDays t
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                if (selectedDays == 1) "1 day"
-                                else if (selectedDays < 7) "$selectedDays days"
-                                else if (selectedDays == 7) "1 week"
-                                else if (selectedDays == 14) "2 weeks"
-                                else if (selectedDays == 30) "1 month"
-                                else "${selectedDays}h (classic jam)",
+                                when (selectedDays) {
+                                    1 -> "1 day"; 7 -> "1 week"; 14 -> "2 weeks"; 30 -> "1 month"
+                                    48 -> "48h (classic jam)"; else -> "$selectedDays days"
+                                },
                                 color = PrimaryBlack
                             )
                             Spacer(modifier = Modifier.weight(1f))
@@ -425,16 +394,10 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) { // now takes durationDays t
                             durationOptions.forEach { days ->
                                 DropdownMenuItem(
                                     text = {
-                                        Text(
-                                            when (days) {
-                                                1 -> "1 day"
-                                                7 -> "1 week"
-                                                14 -> "2 weeks"
-                                                30 -> "1 month"
-                                                48 -> "48h (classic jam)"
-                                                else -> "$days days"
-                                            }
-                                        )
+                                        Text(when (days) {
+                                            1 -> "1 day"; 7 -> "1 week"; 14 -> "2 weeks"; 30 -> "1 month"
+                                            48 -> "48h (classic jam)"; else -> "$days days"
+                                        })
                                     },
                                     onClick = { selectedDays = days; showDurationMenu = false }
                                 )
@@ -450,9 +413,7 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) { // now takes durationDays t
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
                 ) { Text("Create", color = Color.White) }
             },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) { Text("Cancel", color = PrimaryBlack) }
-            }
+            dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel", color = PrimaryBlack) } }
         )
     }
 }
@@ -461,7 +422,7 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) { // now takes durationDays t
 fun PriorityTaskCard(
     task: Task,
     projectName: String,
-    onStatusChange: (String, TaskStatus) -> Unit = { _, _ -> } // default no-op so existing calls don't break
+    onStatusChange: (String, TaskStatus) -> Unit = { _, _ -> }
 ) {
     val isDone = task.status == TaskStatus.DONE
     val isInProgress = task.status == TaskStatus.IN_PROGRESS
@@ -471,15 +432,11 @@ fun PriorityTaskCard(
         TaskStatus.REVIEW -> "Review"
         TaskStatus.DONE -> "Done"
     }
-
     var showMenu by remember { mutableStateOf(false) }
 
-    Box { // Wrap in Box so DropdownMenu anchors correctly
+    Box {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp)
-                .clickable { showMenu = true }, // ← was /* TODO */
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable { showMenu = true },
             colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.dp, GhostBorder)
@@ -502,22 +459,17 @@ fun PriorityTaskCard(
                     Text(projectName, fontSize = 12.sp, color = SecondaryGray)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Column(horizontalAlignment = Alignment.End) {
-                    Box(
-                        modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                            .background(if (isInProgress) PrimaryBlack else SurfaceContainerHigh)
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(statusText, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (isInProgress) SurfaceContainerLowest else PrimaryBlack, letterSpacing = 0.5.sp)
-                    }
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
+                        .background(if (isInProgress) PrimaryBlack else SurfaceContainerHigh)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(statusText, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (isInProgress) SurfaceContainerLowest else PrimaryBlack, letterSpacing = 0.5.sp)
                 }
             }
         }
-
-        // Status picker dropdown — same pattern as TaskCard in Workspace
         DropdownMenu(
-            expanded = showMenu,
-            onDismissRequest = { showMenu = false },
+            expanded = showMenu, onDismissRequest = { showMenu = false },
             modifier = Modifier.background(SurfaceContainerLowest)
         ) {
             Text(" Move to...", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SecondaryGray, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
@@ -525,10 +477,7 @@ fun PriorityTaskCard(
                 if (status != task.status) {
                     DropdownMenuItem(
                         text = { Text(status.name.replace("_", " ")) },
-                        onClick = {
-                            showMenu = false
-                            onStatusChange(task.id, status)
-                        }
+                        onClick = { showMenu = false; onStatusChange(task.id, status) }
                     )
                 }
             }

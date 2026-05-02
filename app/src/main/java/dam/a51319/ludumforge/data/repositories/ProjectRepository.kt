@@ -7,12 +7,12 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.Calendar
 import java.util.Date
 
 class ProjectRepository {
     private val db = FirebaseFirestore.getInstance()
 
-    // Real-time listener scoped to the current user's jams
     fun getMyJams(userId: String): Flow<List<Project>> = callbackFlow {
         val listener = db.collection("projects")
             .whereEqualTo("creatorId", userId)
@@ -38,18 +38,38 @@ class ProjectRepository {
             }
         awaitClose { listener.remove() }
     }
+
+    /**
+     * Returns how many jams this user created in the current calendar month.
+     * Used to enforce the FREE tier 2-jam/month limit.
+     */
+    suspend fun getJamsCreatedThisMonth(userId: String): Int {
+        return try {
+            val cal = Calendar.getInstance()
+            cal.set(Calendar.DAY_OF_MONTH, 1)
+            cal.set(Calendar.HOUR_OF_DAY, 0)
+            cal.set(Calendar.MINUTE, 0)
+            cal.set(Calendar.SECOND, 0)
+            cal.set(Calendar.MILLISECOND, 0)
+            val monthStart = cal.time
+
+            val snapshot = db.collection("projects")
+                .whereEqualTo("creatorId", userId)
+                .whereGreaterThanOrEqualTo("startDate", monthStart)
+                .get()
+                .await()
+            snapshot.size()
+        } catch (e: Exception) { 0 }
+    }
+
     suspend fun renameJam(projectId: String, newName: String) {
-        db.collection("projects").document(projectId)
-            .update("name", newName)
-            .await()
+        db.collection("projects").document(projectId).update("name", newName).await()
     }
 
     suspend fun deleteJam(projectId: String) {
-        db.collection("projects").document(projectId)
-            .delete()
-            .await()
+        db.collection("projects").document(projectId).delete().await()
     }
-    // Create a new Jam
+
     suspend fun createJam(name: String, theme: String, durationDays: Int, teamSize: Int, creatorId: String): String {
         val newJam = hashMapOf(
             "name" to name,
@@ -64,7 +84,6 @@ class ProjectRepository {
         return docRef.id
     }
 
-    // Keep the existing listenToProject for future use
     fun listenToProject(projectId: String): Flow<Project?> = callbackFlow {
         val listener = db.collection("projects").document(projectId)
             .addSnapshotListener { snapshot, error ->
