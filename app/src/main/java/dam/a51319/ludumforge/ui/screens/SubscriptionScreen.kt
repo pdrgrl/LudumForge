@@ -24,31 +24,38 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dam.a51319.ludumforge.models.UserPlan
 import dam.a51319.ludumforge.ui.theme.*
+import dam.a51319.ludumforge.viewmodels.AuthViewModel
 import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
 
 private data class PlanFeature(val label: String, val free: Boolean, val premium: Boolean)
 
 private val FEATURES = listOf(
-    PlanFeature("Jams per month",         free = true,  premium = true),
-    PlanFeature("AI Roadmap Generator",   free = true,  premium = true),
-    PlanFeature("Team Workspace",         free = true,  premium = true),
-    PlanFeature("Offline Terminal",       free = true,  premium = true),
-    PlanFeature("Public Jam Explorer",    free = true,  premium = true),
-    PlanFeature("Unlimited team jams",    free = false, premium = true),
-    PlanFeature("Panic Button (AI Triage)",free = false, premium = true),
-    PlanFeature("Priority AI generation", free = false, premium = true),
-    PlanFeature("Premium API key (no key needed)", free = false, premium = true)
+    PlanFeature("Jams per month",                    free = true,  premium = true),
+    PlanFeature("AI Roadmap Generator",              free = true,  premium = true),
+    PlanFeature("Team Workspace",                    free = true,  premium = true),
+    PlanFeature("Offline Terminal",                  free = true,  premium = true),
+    PlanFeature("Public Jam Explorer",               free = true,  premium = true),
+    PlanFeature("Unlimited team jams",               free = false, premium = true),
+    PlanFeature("Panic Button (AI Triage)",          free = false, premium = true),
+    PlanFeature("Priority AI generation",            free = false, premium = true),
+    PlanFeature("Premium API key (no key needed)",   free = false, premium = true)
 )
 
 @Composable
 fun SubscriptionScreen(
-    viewModel: PersonalDashboardViewModel = viewModel(),
+    dashboardViewModel: PersonalDashboardViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
-    val currentPlan by viewModel.currentPlan.collectAsState()
-    val jamsThisMonth by viewModel.jamsThisMonth.collectAsState()
+    val currentPlan by dashboardViewModel.currentPlan.collectAsState()
+    val jamsThisMonth by dashboardViewModel.jamsThisMonth.collectAsState()
     var upgrading by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+
+    // Refresh plan + jam count every time this screen is entered
+    LaunchedEffect(Unit) {
+        dashboardViewModel.refreshSubscriptionState()
+    }
 
     if (showSuccessDialog) {
         AlertDialog(
@@ -73,7 +80,6 @@ fun SubscriptionScreen(
             .padding(horizontal = 24.dp)
             .padding(top = 32.dp, bottom = 100.dp)
     ) {
-        // ── Header ───────────────────────────────────────────────────────────────
         Text("SUBSCRIPTION", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
         Spacer(modifier = Modifier.height(8.dp))
         Text("Choose Your Plan", style = MaterialTheme.typography.headlineLarge, color = PrimaryBlack)
@@ -86,7 +92,7 @@ fun SubscriptionScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ── Usage pill ────────────────────────────────────────────────────────────
+        // ── Usage pill (FREE only) ──────────────────────────────────────────────
         if (currentPlan == UserPlan.FREE) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -119,34 +125,24 @@ fun SubscriptionScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // ── Plan cards row ────────────────────────────────────────────────────────
+        // ── Plan cards ─────────────────────────────────────────────────────────
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // FREE card
             PlanCard(
                 modifier = Modifier.weight(1f),
-                title = "Free",
-                price = "€0",
-                period = "forever",
-                isCurrentPlan = currentPlan == UserPlan.FREE,
-                isPremium = false
+                title = "Free", price = "€0", period = "forever",
+                isCurrentPlan = currentPlan == UserPlan.FREE, isPremium = false
             )
-            // PREMIUM card
             PlanCard(
                 modifier = Modifier.weight(1f),
-                title = "Premium",
-                price = "€3.99",
-                period = "/ month",
-                isCurrentPlan = currentPlan == UserPlan.PREMIUM,
-                isPremium = true
+                title = "Premium", price = "€3.99", period = "/ month",
+                isCurrentPlan = currentPlan == UserPlan.PREMIUM, isPremium = true
             )
         }
-
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ── Feature comparison table ─────────────────────────────────────────────
+        // ── Feature table ──────────────────────────────────────────────────────
         Text("WHAT'S INCLUDED", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
         Spacer(modifier = Modifier.height(16.dp))
-
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
@@ -154,10 +150,9 @@ fun SubscriptionScreen(
             border = BorderStroke(1.dp, GhostBorder)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                // Header row
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text("Feature", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
-                    Text("Free", modifier = Modifier.width(48.dp), style = MaterialTheme.typography.labelLarge, color = SecondaryGray, textAlign = TextAlign.Center)
+                    Text("Free",    modifier = Modifier.width(48.dp), style = MaterialTheme.typography.labelLarge, color = SecondaryGray, textAlign = TextAlign.Center)
                     Text("Premium", modifier = Modifier.width(64.dp), style = MaterialTheme.typography.labelLarge, color = SecondaryGray, textAlign = TextAlign.Center)
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = GhostBorder)
@@ -166,7 +161,6 @@ fun SubscriptionScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Special label for the jams-per-month row
                         if (i == 0) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(feature.label, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = PrimaryBlack)
@@ -183,10 +177,9 @@ fun SubscriptionScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ── CTA button ─────────────────────────────────────────────────────────────
+        // ── CTA ────────────────────────────────────────────────────────────────
         when (currentPlan) {
             UserPlan.PREMIUM -> {
                 Row(
@@ -201,9 +194,7 @@ fun SubscriptionScreen(
             }
             UserPlan.FREE -> {
                 Button(
-                    onClick = {
-                        upgrading = true
-                    },
+                    onClick = { upgrading = true },
                     enabled = !upgrading,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(12.dp),
@@ -220,13 +211,16 @@ fun SubscriptionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (upgrading) {
-                            // Simulate upgrade flow (swap for real payment SDK later)
                             LaunchedEffect(Unit) {
                                 kotlinx.coroutines.delay(1200)
-                                val repo = dam.a51319.ludumforge.data.repositories.AuthRepository()
-                                repo.upgradeToPremium()
+                                // Upgrade via VM: writes to Firestore + flips _currentPlan immediately
+                                val result = dashboardViewModel.upgradeToPremium()
+                                if (result.isSuccess) {
+                                    // Re-fetch the full User object so TopAppBar badge also updates
+                                    authViewModel.fetchUserProfile()
+                                }
                                 upgrading = false
-                                showSuccessDialog = true
+                                showSuccessDialog = result.isSuccess
                             }
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                         } else {
@@ -240,8 +234,7 @@ fun SubscriptionScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     "Cancel anytime. Upgrade takes effect immediately.",
-                    fontSize = 11.sp,
-                    color = SecondaryGray,
+                    fontSize = 11.sp, color = SecondaryGray,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -253,11 +246,8 @@ fun SubscriptionScreen(
 @Composable
 private fun PlanCard(
     modifier: Modifier = Modifier,
-    title: String,
-    price: String,
-    period: String,
-    isCurrentPlan: Boolean,
-    isPremium: Boolean
+    title: String, price: String, period: String,
+    isCurrentPlan: Boolean, isPremium: Boolean
 ) {
     Card(
         modifier = modifier,
@@ -267,53 +257,28 @@ private fun PlanCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             if (isPremium) {
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = if (isCurrentPlan) Color.White.copy(alpha = 0.15f) else PrimaryBlack
-                ) {
-                    Text(
-                        "PREMIUM",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
-                    )
+                Surface(shape = RoundedCornerShape(4.dp), color = if (isCurrentPlan) Color.White.copy(alpha = 0.15f) else PrimaryBlack) {
+                    Text("PREMIUM", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             } else {
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = SurfaceContainerHigh
-                ) {
-                    Text(
-                        "FREE",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                        color = SecondaryGray
-                    )
+                Surface(shape = RoundedCornerShape(4.dp), color = SurfaceContainerHigh) {
+                    Text("FREE", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = SecondaryGray)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
-            Text(
-                title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = if (isPremium && isCurrentPlan) Color.White else PrimaryBlack
-            )
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                color = if (isPremium && isCurrentPlan) Color.White else PrimaryBlack)
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    price,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = if (isPremium && isCurrentPlan) Color.White else PrimaryBlack
-                )
+                Text(price, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
+                    color = if (isPremium && isCurrentPlan) Color.White else PrimaryBlack)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    period,
-                    fontSize = 12.sp,
+                Text(period, fontSize = 12.sp,
                     color = if (isPremium && isCurrentPlan) Color.White.copy(alpha = 0.7f) else SecondaryGray,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+                    modifier = Modifier.padding(bottom = 4.dp))
             }
             if (isCurrentPlan) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -321,13 +286,10 @@ private fun PlanCard(
                     shape = RoundedCornerShape(4.dp),
                     color = if (isPremium) Color.White.copy(alpha = 0.15f) else SurfaceContainerHigh
                 ) {
-                    Text(
-                        "Current Plan",
+                    Text("Current Plan",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isPremium) Color.White else PrimaryBlack
-                    )
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        color = if (isPremium) Color.White else PrimaryBlack)
                 }
             }
         }
@@ -337,10 +299,7 @@ private fun PlanCard(
 @Composable
 private fun FeatureCell(enabled: Boolean, modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        if (enabled) {
-            Icon(Icons.Default.CheckCircle, contentDescription = "Included", tint = PrimaryBlack, modifier = Modifier.size(18.dp))
-        } else {
-            Icon(Icons.Default.Lock, contentDescription = "Not included", tint = GhostBorder, modifier = Modifier.size(16.dp))
-        }
+        if (enabled) Icon(Icons.Default.CheckCircle, contentDescription = "Included", tint = PrimaryBlack, modifier = Modifier.size(18.dp))
+        else Icon(Icons.Default.Lock, contentDescription = "Not included", tint = GhostBorder, modifier = Modifier.size(16.dp))
     }
 }

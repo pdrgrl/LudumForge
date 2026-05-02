@@ -19,8 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -29,16 +27,19 @@ class PersonalDashboardViewModel : ViewModel() {
     private val taskRepository = TaskRepository()
     private val projectRepository = ProjectRepository()
     private val authRepository = AuthRepository()
-    private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
-    // ── Subscription state ─────────────────────────────────────────────────────
+    // Resolved lazily so we always get the uid even if auth was not ready at init
+    private val currentUserId: String?
+        get() = FirebaseAuth.getInstance().currentUser?.uid
+
+    // ── Subscription state ──────────────────────────────────────────────────────
     private val _currentPlan = MutableStateFlow(UserPlan.FREE)
     val currentPlan: StateFlow<UserPlan> = _currentPlan.asStateFlow()
 
     private val _jamsThisMonth = MutableStateFlow(0)
     val jamsThisMonth: StateFlow<Int> = _jamsThisMonth.asStateFlow()
 
-    // One-shot event: emitted when a FREE user hits the 2-jam limit
+    /** Emitted when a FREE user tries to create a jam but is at the monthly limit. */
     private val _jamLimitReached = MutableSharedFlow<Unit>()
     val jamLimitReached: SharedFlow<Unit> = _jamLimitReached.asSharedFlow()
 
@@ -50,7 +51,7 @@ class PersonalDashboardViewModel : ViewModel() {
     private val _timeLeftInSeconds = MutableStateFlow(48 * 3600L)
     val timeLeftInSeconds: StateFlow<Long> = _timeLeftInSeconds.asStateFlow()
 
-    // ── Task / project state ──────────────────────────────────────────────────
+    // ── Task / project state ────────────────────────────────────────────────────
     private val _myTasks = MutableStateFlow<List<Task>>(emptyList())
     val myTasks: StateFlow<List<Task>> = _myTasks.asStateFlow()
 
@@ -65,55 +66,65 @@ class PersonalDashboardViewModel : ViewModel() {
         loadMyJams()
         loadAllTasksForJams()
         observeActiveJamTimer()
-        loadSubscriptionState()
+        refreshSubscriptionState()
     }
 
-    private fun loadSubscriptionState() {
+    /**
+     * Public: called from SubscriptionScreen's LaunchedEffect so the count and
+     * plan are always fresh whenever the screen is entered.
+     */
+    fun refreshSubscriptionState() {
         viewModelScope.launch {
+            val uid = currentUserId ?: return@launch
             val user = authRepository.getUserProfile()
             _currentPlan.value = user?.plan ?: UserPlan.FREE
-            if (currentUserId != null) {
-                _jamsThisMonth.value = projectRepository.getJamsCreatedThisMonth(currentUserId)
-            }
+            _jamsThisMonth.value = projectRepository.getJamsCreatedThisMonth(uid)
         }
     }
 
+    /**
+     * Writes PREMIUM to Firestore, then immediately updates _currentPlan in-memory
+     * so every collector (TopAppBar badge, SubscriptionScreen) reflects the change
+     * without waiting for a network round-trip.
+     */
+    suspend fun upgradeToPremium(): Result<Unit> {
+        val result = authRepository.upgradeToPremium()
+        if (result.isSuccess) {
+            _currentPlan.value = UserPlan.PREMIUM
+        }
+        return result
+    }
+
     private fun loadMyJams() {
-        if (currentUserId == null) return
+        val uid = currentUserId ?: return
         viewModelScope.launch {
-            projectRepository.getMyJams(currentUserId).collect { jams ->
+            projectRepository.getMyJams(uid).collect { jams ->
                 _myJams.value = jams
             }
         }
     }
 
-    /**
-     * Creates a new jam, but only if the user is on PREMIUM or hasn't hit the FREE monthly limit.
-     * Emits [jamLimitReached] when blocked.
-     */
     fun createNewJam(name: String, theme: String, durationDays: Int = 7) {
-        if (currentUserId == null || name.isBlank()) return
+        val uid = currentUserId ?: return
+        if (name.isBlank()) return
         viewModelScope.launch {
-            // Refresh count to avoid stale cache
-            val count = projectRepository.getJamsCreatedThisMonth(currentUserId)
+            val count = projectRepository.getJamsCreatedThisMonth(uid)
             _jamsThisMonth.value = count
-
             if (_currentPlan.value == UserPlan.FREE && count >= FREE_JAM_LIMIT) {
                 _jamLimitReached.emit(Unit)
                 return@launch
             }
-
             try {
-                projectRepository.createJam(name, theme, durationDays, 1, currentUserId)
+                projectRepository.createJam(name, theme, durationDays, 1, uid)
                 _jamsThisMonth.value = count + 1
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
     private fun loadMyTasks() {
-        if (currentUserId == null) return
+        val uid = currentUserId ?: return
         viewModelScope.launch {
-            taskRepository.getTasksForUser(currentUserId).collect { allMyTasks ->
+            taskRepository.getTasksForUser(uid).collect { allMyTasks ->
                 _myTasks.value = allMyTasks.filter { it.status != TaskStatus.DONE }
             }
         }
