@@ -1,5 +1,8 @@
 package dam.a51319.ludumforge.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,12 +33,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dam.a51319.ludumforge.data.SessionManager
 import dam.a51319.ludumforge.models.*
 import dam.a51319.ludumforge.ui.theme.*
+import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
 import dam.a51319.ludumforge.viewmodels.TeamWorkspaceViewModel
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.ExperimentalFoundationApi
+import kotlinx.coroutines.launch
 
 // ─── Category colour map ────────────────────────────────────────────────────
 private fun categoryColor(category: TaskCategory): Color = when (category) {
@@ -49,13 +54,23 @@ private fun categoryColor(category: TaskCategory): Color = when (category) {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
+fun TeamWorkspaceScreen(
+    viewModel: TeamWorkspaceViewModel = viewModel(),
+    dashboardViewModel: PersonalDashboardViewModel = viewModel()
+) {
     val teamTasks by viewModel.teamTasks.collectAsState()
     val realUsers by viewModel.teamMembers.collectAsState()
     val activeJamId by SessionManager.activeJamId.collectAsState()
+    val activeJamName by SessionManager.activeJamName.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // ── Add-sheet state ──────────────────────────────────────────────────────
+    // ── Pending invite state ───────────────────────────────────────────
+    val pendingInviteJam by dashboardViewModel.pendingInviteJam.collectAsState()
+    val inviteSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // ── Add-sheet state ──────────────────────────────────────────────
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showAddSheet by remember { mutableStateOf(false) }
     var newTaskTitle by remember { mutableStateOf("") }
@@ -63,7 +78,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     var selectedCategory by remember { mutableStateOf(TaskCategory.CODE) }
     var selectedAssignee by remember { mutableStateOf<User?>(null) }
 
-    // ── Edit-sheet state ─────────────────────────────────────────────────────
+    // ── Edit-sheet state ──────────────────────────────────────────────
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var editingTask by remember { mutableStateOf<Task?>(null) }
     var editTitle by remember { mutableStateOf("") }
@@ -72,7 +87,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     var editAssignee by remember { mutableStateOf<User?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // ── Filter ───────────────────────────────────────────────────────────────
+    // ── Filter ───────────────────────────────────────────────────────────
     var filterQuery by remember { mutableStateOf("") }
     val filteredTasks = remember(teamTasks, filterQuery) {
         if (filterQuery.isBlank()) teamTasks
@@ -80,7 +95,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     }
     val groupedTasks = filteredTasks.groupBy { it.status }
 
-    // ── Delete confirm dialog ────────────────────────────────────────────────
+    // ── Delete confirm dialog ─────────────────────────────────────────
     if (showDeleteConfirm && editingTask != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
@@ -102,7 +117,73 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
         )
     }
 
+    // ── Invite confirm bottom sheet ─────────────────────────────────
+    if (pendingInviteJam != null) {
+        ModalBottomSheet(
+            onDismissRequest = { dashboardViewModel.clearPendingInvite() },
+            sheetState = inviteSheetState,
+            containerColor = SurfaceBase
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Default.Groups,
+                    contentDescription = null,
+                    tint = PrimaryBlack,
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "You've been invited!",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryBlack
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Join jam:",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = SecondaryGray
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    pendingInviteJam!!.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryBlack
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = {
+                        dashboardViewModel.acceptInvite()
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Joined \"${pendingInviteJam!!.name}\"! Find it in your dashboard.")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                ) {
+                    Text("Join Jam", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                TextButton(
+                    onClick = { dashboardViewModel.clearPendingInvite() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Decline", color = SecondaryGray)
+                }
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (activeJamId != null) {
                 FloatingActionButton(
@@ -156,7 +237,40 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
                 item {
                     Text("STUDIO WORKSPACE", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Team Workspace", style = MaterialTheme.typography.headlineLarge, color = PrimaryBlack)
+                    // ── Header row: title + share button ────────────────────────
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Team Workspace",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = PrimaryBlack
+                        )
+                        // Share / invite button — only shown when a jam is active
+                        activeJamId?.let { jamId ->
+                            IconButton(
+                                onClick = {
+                                    val link = "ludumforge://join?jamId=$jamId"
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("LudumForge Invite", link))
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "Invite link copied! Share it with your team.",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = "Invite collaborators",
+                                    tint = PrimaryBlack
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(24.dp))
                     TextField(
                         value = filterQuery,
@@ -211,7 +325,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
         }
     }
 
-    // ── Add Task Bottom Sheet ────────────────────────────────────────────────
+    // ── Add Task Bottom Sheet ────────────────────────────────────────────
     if (showAddSheet) {
         ModalBottomSheet(
             onDismissRequest = { showAddSheet = false },
@@ -242,7 +356,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
         }
     }
 
-    // ── Edit Task Bottom Sheet ───────────────────────────────────────────────
+    // ── Edit Task Bottom Sheet ───────────────────────────────────────────
     if (editingTask != null) {
         ModalBottomSheet(
             onDismissRequest = { editingTask = null },
@@ -261,7 +375,6 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
                 onCategoryChange = { editCategory = it },
                 onAssigneeChange = { editAssignee = it },
                 trailingAction = {
-                    // Trash icon — opens the delete confirm dialog
                     IconButton(onClick = { showDeleteConfirm = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete Task", tint = ErrorRed)
                     }
@@ -276,7 +389,7 @@ fun TeamWorkspaceScreen(viewModel: TeamWorkspaceViewModel = viewModel()) {
     }
 }
 
-// ── Shared form composable (Add + Edit reuse) ────────────────────────────────
+// ── Shared form composable (Add + Edit reuse) ────────────────────────────
 @Composable
 private fun TaskFormSheet(
     title: String,
@@ -408,7 +521,7 @@ private fun TaskFormSheet(
     }
 }
 
-// ── Column header ─────────────────────────────────────────────────────────────
+// ── Column header ────────────────────────────────────────────────────────────
 @Composable
 fun ColumnHeader(title: String, count: Int) {
     Row(
@@ -464,7 +577,6 @@ fun TaskCard(
     ) {
         Box {
             Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-                // ── Category badge ────────────────────────────────────────
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -490,7 +602,6 @@ fun TaskCard(
                         )
                     }
                 }
-                // ── Title ─────────────────────────────────────────────────
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     task.title,
@@ -507,7 +618,6 @@ fun TaskCard(
                         trackColor = SurfaceContainerHigh
                     )
                 }
-                // ── Assignee avatars ──────────────────────────────────────
                 if (assignees.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
@@ -527,7 +637,6 @@ fun TaskCard(
                     }
                 }
             }
-            // ── Status dropdown ───────────────────────────────────────────
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },

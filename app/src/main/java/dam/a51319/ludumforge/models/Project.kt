@@ -18,5 +18,7 @@ data class Project(
     val endDate: Date = Date(),
     val teamSize: Int = 1,
     val status: ProjectStatus = ProjectStatus.PLANNING,
-    val creatorId: String = ""
+    val creatorId: String = "",
+    // UIDs of collaborators who joined via invite link (not the creator)
+    val memberIds: List<String> = emptyList()
 )

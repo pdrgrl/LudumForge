@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -40,7 +41,8 @@ object Routes {
 
 @Composable
 fun AppNavigation(
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    inviteJamId: String? = null
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -48,10 +50,15 @@ fun AppNavigation(
     val currentUser by authViewModel.currentUser.collectAsState()
     val startDest = if (currentUser != null) Routes.PERSONAL_DASHBOARD else Routes.LOGIN
 
-    // ── Single hoisted instance shared by Dashboard AND SubscriptionScreen ──
-    // This ensures that when the user creates a jam on the Dashboard the
-    // _jamsThisMonth StateFlow is the exact same object read by SubscriptionScreen.
+    // Single hoisted VM shared by Dashboard, SubscriptionScreen, and TeamWorkspaceScreen
     val dashboardViewModel: PersonalDashboardViewModel = viewModel()
+
+    // If the app was opened via a deep link, pass the jamId to the VM once
+    LaunchedEffect(inviteJamId) {
+        if (inviteJamId != null) {
+            dashboardViewModel.setPendingInvite(inviteJamId)
+        }
+    }
 
     val mainTabs = listOf(
         Routes.PERSONAL_DASHBOARD,
@@ -123,9 +130,13 @@ fun AppNavigation(
                     }
                 )
             }
-            composable(Routes.TEAM_WORKSPACE) { TeamWorkspaceScreen() }
+            composable(Routes.TEAM_WORKSPACE) {
+                TeamWorkspaceScreen(dashboardViewModel = dashboardViewModel)
+            }
             composable(Routes.PUBLIC_JAMS) { PublicJamsScreen() }
-            composable(Routes.ROADMAP_GENERATOR) { RoadmapGeneratorScreen(authViewModel = authViewModel) }
+            composable(Routes.ROADMAP_GENERATOR) {
+                RoadmapGeneratorScreen(authViewModel = authViewModel)
+            }
             composable(Routes.OFFLINE_TERMINAL) { OfflineTerminalScreen() }
             composable(Routes.SUBSCRIPTION) {
                 SubscriptionScreen(

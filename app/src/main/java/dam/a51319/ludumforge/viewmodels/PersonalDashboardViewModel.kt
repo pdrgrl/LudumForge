@@ -35,10 +35,7 @@ class PersonalDashboardViewModel : ViewModel() {
     private val _currentPlan = MutableStateFlow(UserPlan.FREE)
     val currentPlan: StateFlow<UserPlan> = _currentPlan.asStateFlow()
 
-    /**
-     * Derived directly from _myJams.size so it is always in sync with the
-     * live Firestore stream. No separate query, no race condition.
-     */
+    // Derived from _myJams.size in loadMyJams — always in sync with Firestore stream.
     private val _jamsThisMonth = MutableStateFlow(0)
     val jamsThisMonth: StateFlow<Int> = _jamsThisMonth.asStateFlow()
 
@@ -47,6 +44,37 @@ class PersonalDashboardViewModel : ViewModel() {
 
     companion object {
         const val FREE_JAM_LIMIT = 2
+    }
+
+    // ── Invite state ───────────────────────────────────────────────────────────
+    /** Set by MainActivity when the app is opened via a deep link. */
+    private val _pendingInviteJamId = MutableStateFlow<String?>(null)
+    val pendingInviteJamId: StateFlow<String?> = _pendingInviteJamId.asStateFlow()
+
+    private val _pendingInviteJam = MutableStateFlow<Project?>(null)
+    val pendingInviteJam: StateFlow<Project?> = _pendingInviteJam.asStateFlow()
+
+    fun setPendingInvite(jamId: String) {
+        _pendingInviteJamId.value = jamId
+        viewModelScope.launch {
+            _pendingInviteJam.value = projectRepository.getJamById(jamId)
+        }
+    }
+
+    fun clearPendingInvite() {
+        _pendingInviteJamId.value = null
+        _pendingInviteJam.value = null
+    }
+
+    fun acceptInvite() {
+        val jamId = _pendingInviteJamId.value ?: return
+        val uid = currentUserId ?: return
+        viewModelScope.launch {
+            try {
+                projectRepository.acceptJamInvite(jamId, uid)
+            } catch (e: Exception) { e.printStackTrace() }
+            clearPendingInvite()
+        }
     }
 
     // ── Timer state ─────────────────────────────────────────────────────────────
@@ -71,10 +99,6 @@ class PersonalDashboardViewModel : ViewModel() {
         refreshSubscriptionState()
     }
 
-    /**
-     * Refreshes the plan from Firestore.
-     * Does NOT touch _jamsThisMonth — that is derived from _myJams automatically.
-     */
     fun refreshSubscriptionState() {
         viewModelScope.launch {
             val user = authRepository.getUserProfile()
@@ -84,19 +108,19 @@ class PersonalDashboardViewModel : ViewModel() {
 
     suspend fun upgradeToPremium(): Result<Unit> {
         val result = authRepository.upgradeToPremium()
-        if (result.isSuccess) {
-            _currentPlan.value = UserPlan.PREMIUM
-        }
+        if (result.isSuccess) _currentPlan.value = UserPlan.PREMIUM
         return result
     }
 
     private fun loadMyJams() {
         val uid = currentUserId ?: return
         viewModelScope.launch {
+            // Now returns owned + member jams merged by ProjectRepository
             projectRepository.getMyJams(uid).collect { jams ->
                 _myJams.value = jams
-                // Always keep jamsThisMonth in sync with the live active jam count
-                _jamsThisMonth.value = jams.size
+                // Only count jams where this user is the creator toward the FREE limit
+                val ownedCount = jams.count { it.creatorId == uid }
+                _jamsThisMonth.value = ownedCount
             }
         }
     }
@@ -105,15 +129,14 @@ class PersonalDashboardViewModel : ViewModel() {
         val uid = currentUserId ?: return
         if (name.isBlank()) return
         viewModelScope.launch {
-            // Gate on current active jam count (live, no extra Firestore query needed)
-            val activeCount = _myJams.value.size
-            if (_currentPlan.value == UserPlan.FREE && activeCount >= FREE_JAM_LIMIT) {
+            // Only owned jams count toward the FREE limit — joined jams don't
+            val ownedCount = _myJams.value.count { it.creatorId == uid }
+            if (_currentPlan.value == UserPlan.FREE && ownedCount >= FREE_JAM_LIMIT) {
                 _jamLimitReached.emit(Unit)
                 return@launch
             }
             try {
                 projectRepository.createJam(name, theme, durationDays, 1, uid)
-                // _jamsThisMonth will auto-update when the Firestore snapshot fires
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
