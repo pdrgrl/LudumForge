@@ -28,7 +28,6 @@ class PersonalDashboardViewModel : ViewModel() {
     private val projectRepository = ProjectRepository()
     private val authRepository = AuthRepository()
 
-    // Resolved lazily so we always get the uid even if auth was not ready at init
     private val currentUserId: String?
         get() = FirebaseAuth.getInstance().currentUser?.uid
 
@@ -36,10 +35,13 @@ class PersonalDashboardViewModel : ViewModel() {
     private val _currentPlan = MutableStateFlow(UserPlan.FREE)
     val currentPlan: StateFlow<UserPlan> = _currentPlan.asStateFlow()
 
+    /**
+     * Derived directly from _myJams.size so it is always in sync with the
+     * live Firestore stream. No separate query, no race condition.
+     */
     private val _jamsThisMonth = MutableStateFlow(0)
     val jamsThisMonth: StateFlow<Int> = _jamsThisMonth.asStateFlow()
 
-    /** Emitted when a FREE user tries to create a jam but is at the monthly limit. */
     private val _jamLimitReached = MutableSharedFlow<Unit>()
     val jamLimitReached: SharedFlow<Unit> = _jamLimitReached.asSharedFlow()
 
@@ -70,23 +72,16 @@ class PersonalDashboardViewModel : ViewModel() {
     }
 
     /**
-     * Public: called from SubscriptionScreen's LaunchedEffect so the count and
-     * plan are always fresh whenever the screen is entered.
+     * Refreshes the plan from Firestore.
+     * Does NOT touch _jamsThisMonth — that is derived from _myJams automatically.
      */
     fun refreshSubscriptionState() {
         viewModelScope.launch {
-            val uid = currentUserId ?: return@launch
             val user = authRepository.getUserProfile()
             _currentPlan.value = user?.plan ?: UserPlan.FREE
-            _jamsThisMonth.value = projectRepository.getJamsCreatedThisMonth(uid)
         }
     }
 
-    /**
-     * Writes PREMIUM to Firestore, then immediately updates _currentPlan in-memory
-     * so every collector (TopAppBar badge, SubscriptionScreen) reflects the change
-     * without waiting for a network round-trip.
-     */
     suspend fun upgradeToPremium(): Result<Unit> {
         val result = authRepository.upgradeToPremium()
         if (result.isSuccess) {
@@ -100,6 +95,8 @@ class PersonalDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             projectRepository.getMyJams(uid).collect { jams ->
                 _myJams.value = jams
+                // Always keep jamsThisMonth in sync with the live active jam count
+                _jamsThisMonth.value = jams.size
             }
         }
     }
@@ -108,15 +105,15 @@ class PersonalDashboardViewModel : ViewModel() {
         val uid = currentUserId ?: return
         if (name.isBlank()) return
         viewModelScope.launch {
-            val count = projectRepository.getJamsCreatedThisMonth(uid)
-            _jamsThisMonth.value = count
-            if (_currentPlan.value == UserPlan.FREE && count >= FREE_JAM_LIMIT) {
+            // Gate on current active jam count (live, no extra Firestore query needed)
+            val activeCount = _myJams.value.size
+            if (_currentPlan.value == UserPlan.FREE && activeCount >= FREE_JAM_LIMIT) {
                 _jamLimitReached.emit(Unit)
                 return@launch
             }
             try {
                 projectRepository.createJam(name, theme, durationDays, 1, uid)
-                _jamsThisMonth.value = count + 1
+                // _jamsThisMonth will auto-update when the Firestore snapshot fires
             } catch (e: Exception) { e.printStackTrace() }
         }
     }

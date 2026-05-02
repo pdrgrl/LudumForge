@@ -30,15 +30,15 @@ import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
 private data class PlanFeature(val label: String, val free: Boolean, val premium: Boolean)
 
 private val FEATURES = listOf(
-    PlanFeature("Jams per month",                    free = true,  premium = true),
-    PlanFeature("AI Roadmap Generator",              free = true,  premium = true),
-    PlanFeature("Team Workspace",                    free = true,  premium = true),
-    PlanFeature("Offline Terminal",                  free = true,  premium = true),
-    PlanFeature("Public Jam Explorer",               free = true,  premium = true),
-    PlanFeature("Unlimited team jams",               free = false, premium = true),
-    PlanFeature("Panic Button (AI Triage)",          free = false, premium = true),
-    PlanFeature("Priority AI generation",            free = false, premium = true),
-    PlanFeature("Premium API key (no key needed)",   free = false, premium = true)
+    PlanFeature("Active team jams",              free = true,  premium = true),
+    PlanFeature("AI Roadmap Generator",          free = true,  premium = true),
+    PlanFeature("Team Workspace",                free = true,  premium = true),
+    PlanFeature("Offline Terminal",              free = true,  premium = true),
+    PlanFeature("Public Jam Explorer",           free = true,  premium = true),
+    PlanFeature("Unlimited active jams",         free = false, premium = true),
+    PlanFeature("Panic Button (AI Triage)",      free = false, premium = true),
+    PlanFeature("Priority AI generation",        free = false, premium = true),
+    PlanFeature("No API key required",           free = false, premium = true)
 )
 
 @Composable
@@ -48,11 +48,11 @@ fun SubscriptionScreen(
     onNavigateBack: () -> Unit = {}
 ) {
     val currentPlan by dashboardViewModel.currentPlan.collectAsState()
-    val jamsThisMonth by dashboardViewModel.jamsThisMonth.collectAsState()
+    val activeJamCount by dashboardViewModel.jamsThisMonth.collectAsState()
     var upgrading by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // Refresh plan + jam count every time this screen is entered
+    // Only refresh plan from Firestore — jam count is already live via myJams flow
     LaunchedEffect(Unit) {
         dashboardViewModel.refreshSubscriptionState()
     }
@@ -92,7 +92,7 @@ fun SubscriptionScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ── Usage pill (FREE only) ──────────────────────────────────────────────
+        // ── Active Jams usage pill (FREE only) ─────────────────────────────
         if (currentPlan == UserPlan.FREE) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -105,19 +105,23 @@ fun SubscriptionScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("This month's jams", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                        Text(
+                            "Active Jams",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = SecondaryGray
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "$jamsThisMonth / ${PersonalDashboardViewModel.FREE_JAM_LIMIT}",
+                            "$activeJamCount / ${PersonalDashboardViewModel.FREE_JAM_LIMIT}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (jamsThisMonth >= PersonalDashboardViewModel.FREE_JAM_LIMIT) ErrorRed else PrimaryBlack
+                            color = if (activeJamCount >= PersonalDashboardViewModel.FREE_JAM_LIMIT) ErrorRed else PrimaryBlack
                         )
                     }
                     LinearProgressIndicator(
-                        progress = { (jamsThisMonth.toFloat() / PersonalDashboardViewModel.FREE_JAM_LIMIT.toFloat()).coerceIn(0f, 1f) },
+                        progress = { (activeJamCount.toFloat() / PersonalDashboardViewModel.FREE_JAM_LIMIT.toFloat()).coerceIn(0f, 1f) },
                         modifier = Modifier.width(100.dp).height(6.dp).clip(RoundedCornerShape(4.dp)),
-                        color = if (jamsThisMonth >= PersonalDashboardViewModel.FREE_JAM_LIMIT) ErrorRed else PrimaryBlack,
+                        color = if (activeJamCount >= PersonalDashboardViewModel.FREE_JAM_LIMIT) ErrorRed else PrimaryBlack,
                         trackColor = SurfaceContainerLowest
                     )
                 }
@@ -125,7 +129,7 @@ fun SubscriptionScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // ── Plan cards ─────────────────────────────────────────────────────────
+        // ── Plan cards ────────────────────────────────────────────
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             PlanCard(
                 modifier = Modifier.weight(1f),
@@ -140,7 +144,7 @@ fun SubscriptionScreen(
         }
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ── Feature table ──────────────────────────────────────────────────────
+        // ── Feature table ─────────────────────────────────────────
         Text("WHAT'S INCLUDED", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
         Spacer(modifier = Modifier.height(16.dp))
         Card(
@@ -163,12 +167,24 @@ fun SubscriptionScreen(
                     ) {
                         if (i == 0) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(feature.label, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = PrimaryBlack)
-                                Text("Free: 2 | Premium: ∞", fontSize = 11.sp, color = SecondaryGray)
+                                Text(
+                                    feature.label,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                    color = PrimaryBlack
+                                )
+                                Text(
+                                    "Free: 2 active | Premium: ∞",
+                                    fontSize = 11.sp,
+                                    color = SecondaryGray
+                                )
                             }
                         } else {
-                            Text(feature.label, modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = PrimaryBlack)
+                            Text(
+                                feature.label,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = PrimaryBlack
+                            )
                         }
                         FeatureCell(enabled = feature.free, modifier = Modifier.width(48.dp))
                         FeatureCell(enabled = feature.premium, modifier = Modifier.width(64.dp))
@@ -179,7 +195,7 @@ fun SubscriptionScreen(
         }
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ── CTA ────────────────────────────────────────────────────────────────
+        // ── CTA ──────────────────────────────────────────────────
         when (currentPlan) {
             UserPlan.PREMIUM -> {
                 Row(
@@ -213,10 +229,8 @@ fun SubscriptionScreen(
                         if (upgrading) {
                             LaunchedEffect(Unit) {
                                 kotlinx.coroutines.delay(1200)
-                                // Upgrade via VM: writes to Firestore + flips _currentPlan immediately
                                 val result = dashboardViewModel.upgradeToPremium()
                                 if (result.isSuccess) {
-                                    // Re-fetch the full User object so TopAppBar badge also updates
                                     authViewModel.fetchUserProfile()
                                 }
                                 upgrading = false
