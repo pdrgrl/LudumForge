@@ -88,7 +88,7 @@ fun PersonalDashboardScreen(
                         StatCard(modifier = Modifier.weight(1f), value = "84%", label = "Avg.\nVelocity")
                     }
                     Spacer(modifier = Modifier.height(40.dp))
-                    Text("ACTIVE PROJECTS", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                    Text("ACTIVE JAMS", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }

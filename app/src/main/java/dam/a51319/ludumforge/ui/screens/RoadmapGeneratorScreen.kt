@@ -85,17 +85,17 @@ fun RoadmapGeneratorScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Architect your development cycle with precision. Input your vision to generate a surgically precise project blueprint.",
+                    text = "Architect your development cycle with precision. Input your vision to generate a surgically precise jam blueprint.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = OnSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Project Vision Input
+            // Jam Vision Input
             item {
                 Text(
-                    "PROJECT VISION",
+                    "JAM VISION",
                     style = MaterialTheme.typography.labelLarge,
                     color = SecondaryGray
                 )
@@ -172,10 +172,10 @@ fun RoadmapGeneratorScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Project Horizon
+            // Jam Horizon
             item {
                 Text(
-                    "PROJECT HORIZON",
+                    "JAM HORIZON",
                     style = MaterialTheme.typography.labelLarge,
                     color = SecondaryGray
                 )
