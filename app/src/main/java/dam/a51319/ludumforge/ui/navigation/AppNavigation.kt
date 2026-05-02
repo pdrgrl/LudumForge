@@ -22,10 +22,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
 import dam.a51319.ludumforge.ui.components.LudumForgeTopAppBar
 import dam.a51319.ludumforge.ui.screens.*
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
+import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
 
 object Routes {
     const val LOGIN = "login"
@@ -39,12 +39,19 @@ object Routes {
 }
 
 @Composable
-fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
+fun AppNavigation(
+    authViewModel: AuthViewModel = viewModel()
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentUser by authViewModel.currentUser.collectAsState()
     val startDest = if (currentUser != null) Routes.PERSONAL_DASHBOARD else Routes.LOGIN
+
+    // ── Single hoisted instance shared by Dashboard AND SubscriptionScreen ──
+    // This ensures that when the user creates a jam on the Dashboard the
+    // _jamsThisMonth StateFlow is the exact same object read by SubscriptionScreen.
+    val dashboardViewModel: PersonalDashboardViewModel = viewModel()
 
     val mainTabs = listOf(
         Routes.PERSONAL_DASHBOARD,
@@ -104,19 +111,26 @@ fun AppNavigation(authViewModel: AuthViewModel = viewModel()) {
             }
             composable(Routes.PERSONAL_DASHBOARD) {
                 PersonalDashboardScreen(
+                    viewModel = dashboardViewModel,
+                    authViewModel = authViewModel,
                     onLogout = {
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
+                    },
+                    onNavigateToSubscription = {
+                        navController.navigate(Routes.SUBSCRIPTION)
                     }
                 )
             }
             composable(Routes.TEAM_WORKSPACE) { TeamWorkspaceScreen() }
             composable(Routes.PUBLIC_JAMS) { PublicJamsScreen() }
-            composable(Routes.ROADMAP_GENERATOR) { RoadmapGeneratorScreen() }
+            composable(Routes.ROADMAP_GENERATOR) { RoadmapGeneratorScreen(authViewModel = authViewModel) }
             composable(Routes.OFFLINE_TERMINAL) { OfflineTerminalScreen() }
             composable(Routes.SUBSCRIPTION) {
                 SubscriptionScreen(
+                    dashboardViewModel = dashboardViewModel,
+                    authViewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

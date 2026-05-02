@@ -22,7 +22,7 @@ import dam.a51319.ludumforge.data.SessionManager
 sealed class RoadmapUiState {
     object Idle : RoadmapUiState()
     object Loading : RoadmapUiState()
-    object Pushing : RoadmapUiState() // NEW: shows progress while writing to Firestore
+    object Pushing : RoadmapUiState()
     data class Success(val tasks: List<Task>) : RoadmapUiState()
     data class Error(val message: String) : RoadmapUiState()
 }
@@ -38,26 +38,34 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
     private val _uiState = MutableStateFlow<RoadmapUiState>(RoadmapUiState.Idle)
     val uiState: StateFlow<RoadmapUiState> = _uiState.asStateFlow()
 
+    /**
+     * [isPremium] controls whether the API key field is hidden in the UI.
+     * Both tiers use the same user-saved key from SharedPreferences.
+     * The premium benefit is seamless UX (no key input) — a separate
+     * server-side key is out of scope for this academic build.
+     */
     fun onGenerateClicked(userApiKey: String, isPremium: Boolean) {
         val currentJamId = SessionManager.activeJamId.value ?: run {
             _uiState.value = RoadmapUiState.Error("Please select an active Jam in the Planning tab first.")
             return
         }
 
-        val finalApiKey = if (isPremium) {
-            "YOUR_APP_INTERNAL_PREMIUM_API_KEY"
-        } else {
-            userApiKey
-        }
+        // Both FREE and PREMIUM use the saved key for now.
+        // Premium users won't see the key input field in the UI, but the app
+        // still needs the key to be set once in Settings.
+        val finalApiKey = userApiKey
 
         if (finalApiKey.isBlank()) {
-            _uiState.value = RoadmapUiState.Error("Free users must add a Gemini API Key in Settings.")
+            _uiState.value = if (isPremium) {
+                RoadmapUiState.Error("Add your Gemini API Key once in Settings to activate AI generation.")
+            } else {
+                RoadmapUiState.Error("Please add your Gemini API Key in Settings to use the Roadmap Generator.")
+            }
             return
         }
 
         viewModelScope.launch {
             _uiState.value = RoadmapUiState.Loading
-
             try {
                 val generativeModel = GenerativeModel(
                     modelName = "gemini-2.5-flash-lite",
@@ -78,7 +86,6 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
 
                 val startIndex = rawText.indexOf('[')
                 val endIndex = rawText.lastIndexOf(']')
-
                 if (startIndex == -1 || endIndex == -1 || startIndex > endIndex) {
                     throw Exception("AI did not return a valid JSON array.")
                 }
@@ -90,13 +97,7 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
                     val categoryString = obj.optString("category", "CODE").uppercase()
-                    val safeCategory = try {
-                        TaskCategory.valueOf(categoryString)
-                    } catch (e: Exception) {
-                        TaskCategory.CODE
-                    }
-
-                    // NO auto-push here anymore — user decides what to keep
+                    val safeCategory = try { TaskCategory.valueOf(categoryString) } catch (e: Exception) { TaskCategory.CODE }
                     generatedTasks.add(
                         Task(
                             id = "ai_$i",
@@ -108,7 +109,6 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
                         )
                     )
                 }
-
                 _uiState.value = RoadmapUiState.Success(generatedTasks)
 
             } catch (e: Exception) {
@@ -117,39 +117,21 @@ class RoadmapGeneratorViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-    // Called with only the tasks the user chose to keep
     fun pushSelectedTasksToWorkspace(tasks: List<Task>, context: Context) {
         val currentJamId = SessionManager.activeJamId.value ?: return
         if (tasks.isEmpty()) return
-
         viewModelScope.launch {
             _uiState.value = RoadmapUiState.Pushing
-
             tasks.forEach { task ->
-                taskRepository.addTask(
-                    currentJamId,
-                    task.title,
-                    task.category,
-                    task.estimatedMinutes,
-                    null
-                )
+                taskRepository.addTask(currentJamId, task.title, task.category, task.estimatedMinutes, null)
             }
-
-            // Log it
             try {
                 val dao = LudumForgeDatabase.getDatabase(context).actionLogDao()
                 val actionRepo = ActionLogRepository(dao)
                 val user = FirebaseAuth.getInstance().currentUser
                 val userName = user?.displayName ?: user?.email?.substringBefore("@") ?: "A developer"
-                actionRepo.addSystemEvent(
-                    currentJamId,
-                    "⚡ $userName forged ${tasks.size} AI tasks into the workspace"
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            // Reset everything cleanly
+                actionRepo.addSystemEvent(currentJamId, "⚡ $userName forged ${tasks.size} AI tasks into the workspace")
+            } catch (e: Exception) { e.printStackTrace() }
             _uiState.value = RoadmapUiState.Idle
             gameTitle.value = ""
             teamSize.value = ""
