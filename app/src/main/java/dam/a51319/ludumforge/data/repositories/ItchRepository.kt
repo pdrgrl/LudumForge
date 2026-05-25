@@ -9,7 +9,20 @@ import org.jsoup.Jsoup
 
 class ItchRepository {
 
-    suspend fun getLiveJams(): List<Project> = withContext(Dispatchers.IO) {
+    companion object {
+        @Volatile
+        private var cachedJams: List<Project>? = null
+        @Volatile
+        private var lastFetchTime: Long = 0L
+        private const val CACHE_DURATION_MS = 15 * 60 * 1000 // 15 minutes
+    }
+
+    suspend fun getLiveJams(forceRefresh: Boolean = false): List<Project> = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        val cached = cachedJams
+        if (!forceRefresh && cached != null && (now - lastFetchTime) < CACHE_DURATION_MS) {
+            return@withContext cached
+        }
 
         // Step 1: scrape the calendar list for titles, URLs, and participant counts
         data class RawJam(val title: String, val url: String, val participants: Int)
@@ -34,7 +47,7 @@ class ItchRepository {
         }
 
         // Step 2: for the top 20 jams, fetch each jam page in parallel to grab the OG cover image
-        rawList.take(20).map { raw ->
+        val result = rawList.take(20).map { raw ->
             async {
                 val imageUrl: String? = try {
                     val jamDoc = Jsoup.connect("https://itch.io${raw.url}")
@@ -63,5 +76,11 @@ class ItchRepository {
                 )
             }
         }.awaitAll()
+
+        if (result.isNotEmpty()) {
+            cachedJams = result
+            lastFetchTime = System.currentTimeMillis()
+        }
+        result
     }
 }
