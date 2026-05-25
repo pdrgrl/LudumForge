@@ -25,7 +25,7 @@ fun JoinJamBottomSheet(
     jam: Project,
     viewModel: JoinJamViewModel = viewModel(),
     onDismiss: () -> Unit,
-    onGenerateRoadmap: (idea: String, teamSize: Int) -> Unit
+    onGenerateRoadmap: (seedText: String, teamSize: Int) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -40,17 +40,34 @@ fun JoinJamBottomSheet(
         sheetState = sheetState,
         containerColor = SurfaceBase
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).padding(bottom = 24.dp)) {
-            Text("Joining: ${jam.name}", style = MaterialTheme.typography.headlineMedium, color = PrimaryBlack)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            Text(
+                "Joining: ${jam.name}",
+                style = MaterialTheme.typography.headlineMedium,
+                color = PrimaryBlack
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             when (val currentState = state) {
                 is JoinJamState.LoadingSummary, is JoinJamState.LoadingFeedback -> {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = PrimaryBlack)
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text(if (currentState is JoinJamState.LoadingSummary) "Analyzing Jam Rules..." else "Brainstorming Idea...", color = SecondaryGray)
+                            Text(
+                                if (currentState is JoinJamState.LoadingSummary) "Analyzing Jam Rules..." else "Brainstorming Idea...",
+                                color = SecondaryGray
+                            )
                         }
                     }
                 }
@@ -58,19 +75,48 @@ fun JoinJamBottomSheet(
                 is JoinJamState.InputIdea -> {
                     Card(colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh)) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("THEME", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = SecondaryGray)
-                            Text(currentState.theme, color = PrimaryBlack, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "THEME",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = SecondaryGray
+                            )
+                            Text(
+                                currentState.theme,
+                                color = PrimaryBlack,
+                                fontWeight = FontWeight.SemiBold
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("RULES", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = SecondaryGray)
+                            Text(
+                                "RULES",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = SecondaryGray
+                            )
                             Text(currentState.rules, color = PrimaryBlack, fontSize = 14.sp)
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color(0xFFFFE0B2), RoundedCornerShape(8.dp)).padding(12.dp)) {
-                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFE65100))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFFFE0B2), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFE65100)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Remember: You still must click 'Join' on the actual itch.io page to officially participate!", fontSize = 13.sp, color = Color(0xFFE65100), fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Remember: You still must click 'Join' on the actual itch.io page to officially participate!",
+                            fontSize = 13.sp,
+                            color = Color(0xFFE65100),
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -78,7 +124,9 @@ fun JoinJamBottomSheet(
                         value = userIdea,
                         onValueChange = { userIdea = it },
                         label = { Text("What is your game idea?") },
-                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -89,13 +137,25 @@ fun JoinJamBottomSheet(
                         onValueChange = { teamSize = it },
                         valueRange = 1f..10f,
                         steps = 9,
-                        colors = SliderDefaults.colors(thumbColor = PrimaryBlack, activeTrackColor = PrimaryBlack)
+                        colors = SliderDefaults.colors(
+                            thumbColor = PrimaryBlack,
+                            activeTrackColor = PrimaryBlack
+                        )
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { viewModel.brainstormIdea(currentState.theme, currentState.rules, userIdea, teamSize.toInt()) },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        onClick = {
+                            viewModel.brainstormIdea(
+                                currentState.theme,
+                                currentState.rules,
+                                userIdea,
+                                teamSize.toInt()
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
                     ) { Text("Brainstorm with AI") }
                 }
@@ -107,14 +167,30 @@ fun JoinJamBottomSheet(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { onGenerateRoadmap(userIdea, teamSize.toInt()) },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        onClick = {
+                            val seededPrompt = """
+            Jam: ${jam.name}
+
+            My idea:
+            $userIdea
+
+            AI notes:
+            ${currentState.feedback}
+        """.trimIndent()
+
+                            onGenerateRoadmap(seededPrompt, teamSize.toInt())
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
                     ) { Text("Yes, Generate Roadmap") }
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedButton(
                         onClick = { viewModel.refineIdea(currentState.theme, currentState.rules) },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
                     ) { Text("Refine Idea", color = PrimaryBlack) }
                 }
 

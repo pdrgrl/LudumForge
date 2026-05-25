@@ -40,12 +40,32 @@ fun RoadmapGeneratorScreen(
     viewModel: RoadmapGeneratorViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel()
 ) {
+
+    val pendingIdea by dam.a51319.ludumforge.data.SessionManager.pendingRoadmapIdea.collectAsState()
+    val pendingTeamSize by dam.a51319.ludumforge.data.SessionManager.pendingRoadmapTeamSize.collectAsState()
+    val pendingDuration by dam.a51319.ludumforge.data.SessionManager.pendingRoadmapDuration.collectAsState()
+
+    LaunchedEffect(pendingIdea, pendingTeamSize, pendingDuration) {
+        if (!pendingIdea.isNullOrBlank()) {
+            viewModel.gameTitle.value = pendingIdea ?: ""
+        }
+        if (!pendingTeamSize.isNullOrBlank()) {
+            viewModel.teamSize.value = pendingTeamSize ?: ""
+        }
+        if (!pendingDuration.isNullOrBlank()) {
+            viewModel.duration.value = pendingDuration ?: ""
+        }
+
+        if (!pendingIdea.isNullOrBlank() || !pendingTeamSize.isNullOrBlank() || !pendingDuration.isNullOrBlank()) {
+            dam.a51319.ludumforge.data.SessionManager.clearRoadmapSeed()
+        }
+    }
+
     val currentUser by authViewModel.currentUser.collectAsState()
     val context = LocalContext.current
     val sharedPrefs = remember { context.getSharedPreferences("LudumForgePrefs", Context.MODE_PRIVATE) }
     val savedApiKey = sharedPrefs.getString("gemini_api_key", "") ?: ""
 
-    // ✔ Correct: compare plan, not role
     val isPremium = currentUser?.plan == UserPlan.PREMIUM
 
     val projectVision by viewModel.gameTitle.collectAsState()

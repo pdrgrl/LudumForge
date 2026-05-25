@@ -175,10 +175,10 @@ fun PublicJamsScreen(
             JoinJamBottomSheet(
                 jam = jam,
                 onDismiss = { selectedJamToJoin = null },
-                onGenerateRoadmap = { idea, size ->
+                onGenerateRoadmap = { seedText, size ->
                     dashboardViewModel.createNewJamAndReturnId(
                         name = jam.name,
-                        theme = idea,
+                        theme = seedText,
                         durationDays = 7,
                         teamSize = size
                     ) { createdJamId ->
@@ -187,6 +187,13 @@ fun PublicJamsScreen(
                                 createdJamId,
                                 jam.name
                             )
+
+                            dam.a51319.ludumforge.data.SessionManager.seedRoadmapInput(
+                                idea = seedText,
+                                teamSize = size.toString(),
+                                duration = "7 days"
+                            )
+
                             selectedJamToJoin = null
                             onNavigateToRoadmap()
                         }

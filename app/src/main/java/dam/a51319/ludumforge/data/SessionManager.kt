@@ -8,13 +8,37 @@ object SessionManager {
     private val _activeJamId = MutableStateFlow<String?>(null)
     val activeJamId: StateFlow<String?> = _activeJamId.asStateFlow()
 
-    // NEW: Also store the name so the TopBar can display it without a DB call
     private val _activeJamName = MutableStateFlow<String?>(null)
     val activeJamName: StateFlow<String?> = _activeJamName.asStateFlow()
+
+    private val _pendingRoadmapIdea = MutableStateFlow<String?>(null)
+    val pendingRoadmapIdea: StateFlow<String?> = _pendingRoadmapIdea.asStateFlow()
+
+    private val _pendingRoadmapTeamSize = MutableStateFlow<String?>(null)
+    val pendingRoadmapTeamSize: StateFlow<String?> = _pendingRoadmapTeamSize.asStateFlow()
+
+    private val _pendingRoadmapDuration = MutableStateFlow<String?>(null)
+    val pendingRoadmapDuration: StateFlow<String?> = _pendingRoadmapDuration.asStateFlow()
 
     fun setActiveJam(jamId: String, jamName: String) {
         _activeJamId.value = jamId
         _activeJamName.value = jamName
+    }
+
+    fun seedRoadmapInput(
+        idea: String,
+        teamSize: String,
+        duration: String = "48 hours"
+    ) {
+        _pendingRoadmapIdea.value = idea
+        _pendingRoadmapTeamSize.value = teamSize
+        _pendingRoadmapDuration.value = duration
+    }
+
+    fun clearRoadmapSeed() {
+        _pendingRoadmapIdea.value = null
+        _pendingRoadmapTeamSize.value = null
+        _pendingRoadmapDuration.value = null
     }
 
     fun clearActiveJam() {
