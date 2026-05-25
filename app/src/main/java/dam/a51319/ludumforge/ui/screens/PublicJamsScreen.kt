@@ -31,11 +31,16 @@ import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import dam.a51319.ludumforge.models.*
 import dam.a51319.ludumforge.ui.theme.*
+import dam.a51319.ludumforge.viewmodels.PersonalDashboardViewModel
 import dam.a51319.ludumforge.viewmodels.PublicJamsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
+fun PublicJamsScreen(
+    viewModel: PublicJamsViewModel = viewModel(),
+    dashboardViewModel: PersonalDashboardViewModel = viewModel(),
+    onNavigateToRoadmap: () -> Unit
+) {
 
     val jams by viewModel.publicJams.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -171,9 +176,21 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
                 jam = jam,
                 onDismiss = { selectedJamToJoin = null },
                 onGenerateRoadmap = { idea, size ->
-                    selectedJamToJoin = null
-                    // TODO: Call personalDashboardViewModel.createNewJam(jam.name, idea, durationDays)
-                    // TODO: Navigate user to the Team Workspace / Roadmap Screen
+                    dashboardViewModel.createNewJamAndReturnId(
+                        name = jam.name,
+                        theme = idea,
+                        durationDays = 7,
+                        teamSize = size
+                    ) { createdJamId ->
+                        if (createdJamId != null) {
+                            dam.a51319.ludumforge.data.SessionManager.setActiveJam(
+                                createdJamId,
+                                jam.name
+                            )
+                            selectedJamToJoin = null
+                            onNavigateToRoadmap()
+                        }
+                    }
                 }
             )
         }

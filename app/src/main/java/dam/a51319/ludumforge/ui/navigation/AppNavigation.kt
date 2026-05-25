@@ -133,7 +133,14 @@ fun AppNavigation(
             composable(Routes.TEAM_WORKSPACE) {
                 TeamWorkspaceScreen(dashboardViewModel = dashboardViewModel)
             }
-            composable(Routes.PUBLIC_JAMS) { PublicJamsScreen() }
+            composable(Routes.PUBLIC_JAMS) {
+                PublicJamsScreen(
+                    dashboardViewModel = dashboardViewModel,
+                    onNavigateToRoadmap = {
+                        navController.navigate(Routes.ROADMAP_GENERATOR)
+                    }
+                )
+            }
             composable(Routes.ROADMAP_GENERATOR) {
                 RoadmapGeneratorScreen(authViewModel = authViewModel)
             }

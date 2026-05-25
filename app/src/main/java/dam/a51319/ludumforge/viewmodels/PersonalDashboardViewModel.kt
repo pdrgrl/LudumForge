@@ -134,21 +134,54 @@ class PersonalDashboardViewModel : ViewModel() {
     }
 
     fun createNewJam(name: String, theme: String, durationDays: Int = 7) {
-        val uid = currentUserId ?: return
-        if (name.isBlank()) return
+        createNewJamAndReturnId(
+            name = name,
+            theme = theme,
+            durationDays = durationDays,
+            teamSize = 1,
+            onResult = { }
+        )
+    }
+
+    fun createNewJamAndReturnId(
+        name: String,
+        theme: String,
+        durationDays: Int = 7,
+        teamSize: Int = 1,
+        onResult: (String?) -> Unit
+    ) {
+        val uid = currentUserId ?: run {
+            onResult(null)
+            return
+        }
+        if (name.isBlank()) {
+            onResult(null)
+            return
+        }
 
         viewModelScope.launch {
-            val ownedThisMonth = _myJams.value.count { it.creatorId == uid && isSameMonth(it.startDate) }
+            val ownedThisMonth = _myJams.value.count {
+                it.creatorId == uid && isSameMonth(it.startDate)
+            }
 
             if (_currentPlan.value == UserPlan.FREE && ownedThisMonth >= FREE_JAM_LIMIT) {
                 _jamLimitReached.emit(Unit)
+                onResult(null)
                 return@launch
             }
 
             try {
-                projectRepository.createJam(name, theme, durationDays, 1, uid)
+                val jamId = projectRepository.createJam(
+                    name = name,
+                    theme = theme,
+                    durationDays = durationDays,
+                    teamSize = teamSize,
+                    creatorId = uid
+                )
+                onResult(jamId)
             } catch (e: Exception) {
                 e.printStackTrace()
+                onResult(null)
             }
         }
     }
