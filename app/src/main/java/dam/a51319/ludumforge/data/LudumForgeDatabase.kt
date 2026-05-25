@@ -21,7 +21,9 @@ abstract class LudumForgeDatabase : RoomDatabase() {
                     context.applicationContext,
                     LudumForgeDatabase::class.java,
                     "ludumforge_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }

@@ -39,7 +39,7 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
 
     val jams by viewModel.publicJams.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-
+    var selectedJamToJoin by remember { mutableStateOf<Project?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
     val filters = listOf("All", "Active", "Upcoming", "Archived")
@@ -162,14 +162,26 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
             }
 
             items(filteredJams) { jam ->
-                JamCard(jam = jam)
+                JamCard(jam = jam, onJoinClicked = { selectedJamToJoin = it })
             }
+        }
+
+        selectedJamToJoin?.let { jam ->
+            JoinJamBottomSheet(
+                jam = jam,
+                onDismiss = { selectedJamToJoin = null },
+                onGenerateRoadmap = { idea, size ->
+                    selectedJamToJoin = null
+                    // TODO: Call personalDashboardViewModel.createNewJam(jam.name, idea, durationDays)
+                    // TODO: Navigate user to the Team Workspace / Roadmap Screen
+                }
+            )
         }
     }
 }
 
 @Composable
-fun JamCard(jam: Project) {
+fun JamCard(jam: Project, onJoinClicked: (Project) -> Unit) {
     val statusText = when (jam.status) {
         ProjectStatus.ACTIVE    -> "ACTIVE"
         ProjectStatus.PLANNING  -> "UPCOMING"
@@ -298,8 +310,7 @@ fun JamCard(jam: Project) {
                         Text("View Details", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                     if (jam.status != ProjectStatus.COMPLETED) {
-                        Button(
-                            onClick = { /* TODO */ },
+                        Button(onClick = { onJoinClicked(jam) },
                             modifier = Modifier.weight(1f).height(48.dp),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),

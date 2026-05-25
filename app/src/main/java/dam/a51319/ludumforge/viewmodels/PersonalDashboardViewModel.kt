@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.util.Calendar
+import java.util.Date
 
 class PersonalDashboardViewModel : ViewModel() {
 
@@ -125,19 +127,29 @@ class PersonalDashboardViewModel : ViewModel() {
         }
     }
 
+    private fun isSameMonth(date: Date, now: Calendar = Calendar.getInstance()): Boolean {
+        val cal = Calendar.getInstance().apply { time = date }
+        return cal.get(Calendar.YEAR) == now.get(Calendar.YEAR) &&
+                cal.get(Calendar.MONTH) == now.get(Calendar.MONTH)
+    }
+
     fun createNewJam(name: String, theme: String, durationDays: Int = 7) {
         val uid = currentUserId ?: return
         if (name.isBlank()) return
+
         viewModelScope.launch {
-            // Only owned jams count toward the FREE limit — joined jams don't
-            val ownedCount = _myJams.value.count { it.creatorId == uid }
-            if (_currentPlan.value == UserPlan.FREE && ownedCount >= FREE_JAM_LIMIT) {
+            val ownedThisMonth = _myJams.value.count { it.creatorId == uid && isSameMonth(it.startDate) }
+
+            if (_currentPlan.value == UserPlan.FREE && ownedThisMonth >= FREE_JAM_LIMIT) {
                 _jamLimitReached.emit(Unit)
                 return@launch
             }
+
             try {
                 projectRepository.createJam(name, theme, durationDays, 1, uid)
-            } catch (e: Exception) { e.printStackTrace() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

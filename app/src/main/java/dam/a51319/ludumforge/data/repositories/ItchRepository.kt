@@ -83,4 +83,19 @@ class ItchRepository {
         }
         result
     }
+
+    suspend fun getJamDescriptionText(jamUrl: String): String = withContext(Dispatchers.IO) {
+        try {
+            val url = if (jamUrl.startsWith("http")) jamUrl else "https://itch.io$jamUrl"
+            val doc = Jsoup.connect(url)
+                .userAgent("Mozilla/5.0")
+                .timeout(8000)
+                .get()
+            // .text() strips HTML tags and gives clean text
+            return@withContext doc.select(".jam_content").text()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return@withContext "Could not fetch jam details."
+        }
+    }
 }
