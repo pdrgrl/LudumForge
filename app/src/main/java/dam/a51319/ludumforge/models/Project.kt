@@ -21,6 +21,6 @@ data class Project(
     val creatorId: String = "",
     // UIDs of collaborators who joined via invite link (not the creator)
     val memberIds: List<String> = emptyList(),
-
-    val coverImageUrl: String? = null
+    val coverImageUrl: String? = null,
+    val jamUrl: String? = null
 )

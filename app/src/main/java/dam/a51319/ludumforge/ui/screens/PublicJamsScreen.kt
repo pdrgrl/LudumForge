@@ -187,6 +187,8 @@ fun JamCard(jam: Project) {
         else                   -> "Ended"
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,7 +198,12 @@ fun JamCard(jam: Project) {
                 shape = RoundedCornerShape(16.dp),
                 spotColor = PrimaryBlack.copy(alpha = 0.08f)
             )
-            .clickable { /* TODO: open itch.io URL in browser */ },
+            .clickable {
+                jam.jamUrl?.let { url ->
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                    context.startActivity(intent)
+                }
+            },
         colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, GhostBorder)
@@ -259,7 +266,7 @@ fun JamCard(jam: Project) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    jam.theme.removePrefix("itch.io"),
+                    jam.theme,
                     style = MaterialTheme.typography.bodyLarge,
                     color = OnSurfaceVariant,
                     maxLines = 1,
@@ -277,7 +284,12 @@ fun JamCard(jam: Project) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { /* TODO: open jam.theme URL in browser */ },
+                        onClick = {
+                            jam.jamUrl?.let { url ->
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                                context.startActivity(intent)
+                            }
+                        },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(8.dp),
                         border = BorderStroke(1.dp, GhostBorder),

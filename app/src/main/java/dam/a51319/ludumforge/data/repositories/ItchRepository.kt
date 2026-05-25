@@ -56,9 +56,10 @@ class ItchRepository {
                 Project(
                     id = "jam_${raw.title.hashCode()}",
                     name = raw.title,
-                    theme = "itch.io${raw.url}",
+                    theme = "Featured itch.io Jam",
                     teamSize = raw.participants,
-                    coverImageUrl = imageUrl
+                    coverImageUrl = imageUrl,
+                    jamUrl = "https://itch.io${raw.url}"
                 )
             }
         }.awaitAll()
