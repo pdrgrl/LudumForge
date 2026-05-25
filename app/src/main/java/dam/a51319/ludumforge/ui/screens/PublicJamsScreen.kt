@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,11 +20,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import dam.a51319.ludumforge.models.*
 import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.PublicJamsViewModel
@@ -34,20 +37,34 @@ import dam.a51319.ludumforge.viewmodels.PublicJamsViewModel
 @Composable
 fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
 
-    // State Collection
-    val dummyJams by viewModel.publicJams.collectAsState()
+    val jams by viewModel.publicJams.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
     val filters = listOf("All", "Active", "Upcoming", "Archived")
 
-    Scaffold(
-        containerColor = SurfaceBase
-    ) { innerPadding ->
+    val filteredJams = remember(jams, searchQuery, selectedFilter) {
+        jams.filter { jam ->
+            val matchesSearch = searchQuery.isBlank() ||
+                    jam.name.contains(searchQuery, ignoreCase = true) ||
+                    jam.theme.contains(searchQuery, ignoreCase = true)
+            val matchesFilter = when (selectedFilter) {
+                "Active"   -> jam.status == ProjectStatus.ACTIVE
+                "Upcoming" -> jam.status == ProjectStatus.PLANNING
+                "Archived" -> jam.status == ProjectStatus.COMPLETED
+                else       -> true
+            }
+            matchesSearch && matchesFilter
+        }
+    }
+
+    Scaffold(containerColor = SurfaceBase) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp),
             contentPadding = PaddingValues(top = 24.dp, bottom = 100.dp)
         ) {
             item {
@@ -59,8 +76,16 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
                 TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search jams, themes, or hosts...", color = SecondaryGray, style = MaterialTheme.typography.bodyLarge) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = SecondaryGray, modifier = Modifier.size(20.dp)) },
+                    placeholder = {
+                        Text(
+                            "Search jams, themes, or hosts...",
+                            color = SecondaryGray,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = SecondaryGray, modifier = Modifier.size(20.dp))
+                    },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = TextFieldDefaults.colors(
@@ -73,7 +98,10 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     items(filters) { filter ->
                         val isSelected = filter == selectedFilter
                         Box(
@@ -85,7 +113,12 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
                                 .padding(horizontal = 20.dp, vertical = 10.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(filter, color = if (isSelected) SurfaceContainerLowest else PrimaryBlack, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                filter,
+                                color = if (isSelected) SurfaceContainerLowest else PrimaryBlack,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -94,13 +127,41 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
 
             item {
                 if (isLoading) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = PrimaryBlack)
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = PrimaryBlack)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                "Fetching live jams…",
+                                color = SecondaryGray,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
             }
 
-            items(dummyJams) { jam ->
+            if (!isLoading && filteredJams.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🎮", fontSize = 40.sp)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("No jams found", fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Try a different filter or search term", color = SecondaryGray, fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
+
+            items(filteredJams) { jam ->
                 JamCard(jam = jam)
             }
         }
@@ -110,77 +171,173 @@ fun PublicJamsScreen(viewModel: PublicJamsViewModel = viewModel()) {
 @Composable
 fun JamCard(jam: Project) {
     val statusText = when (jam.status) {
-        ProjectStatus.ACTIVE -> "ACTIVE"
-        ProjectStatus.PLANNING -> "UPCOMING"
+        ProjectStatus.ACTIVE    -> "ACTIVE"
+        ProjectStatus.PLANNING  -> "UPCOMING"
         ProjectStatus.COMPLETED -> "ARCHIVED"
-        else -> "UNKNOWN"
+        else                    -> "UNKNOWN"
     }
     val statusColor = when (jam.status) {
-        ProjectStatus.ACTIVE -> Color(0xFF00C853)
+        ProjectStatus.ACTIVE   -> Color(0xFF00C853)
         ProjectStatus.PLANNING -> Color(0xFFFF9800)
-        else -> SecondaryGray
+        else                   -> SecondaryGray
     }
     val timeLeftText = when (jam.status) {
-        ProjectStatus.ACTIVE -> "14 days left"
-        ProjectStatus.PLANNING -> "Starts in 3 days"
-        else -> "Ended"
+        ProjectStatus.ACTIVE   -> "Live now"
+        ProjectStatus.PLANNING -> "Coming soon"
+        else                   -> "Ended"
     }
-    val participants = jam.teamSize.toString()
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp).shadow(elevation = 6.dp, shape = RoundedCornerShape(16.dp), spotColor = PrimaryBlack.copy(alpha = 0.08f)).clickable { /* TODO */ },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 20.dp)
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                spotColor = PrimaryBlack.copy(alpha = 0.08f)
+            )
+            .clickable { /* TODO: open itch.io URL in browser */ },
         colors = CardDefaults.cardColors(containerColor = SurfaceContainerLowest),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, GhostBorder)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(statusColor))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(statusText, style = MaterialTheme.typography.labelLarge, color = PrimaryBlack)
-                }
-                Text(timeLeftText, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SecondaryGray)
+        Column(modifier = Modifier.fillMaxWidth()) {
+
+            // ── Cover image / placeholder header ────────────────────────────
+            if (jam.coverImageUrl != null) {
+                SubcomposeAsyncImage(
+                    model = jam.coverImageUrl,
+                    contentDescription = "${jam.name} cover",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                    contentScale = ContentScale.Crop,
+                    loading = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            SurfaceContainerHigh,
+                                            SurfaceContainerLowest
+                                        )
+                                    )
+                                )
+                        )
+                    },
+                    error = {
+                        JamCoverPlaceholder(jam.name)
+                    }
+                )
+            } else {
+                JamCoverPlaceholder(jam.name)
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(jam.name, style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp), color = PrimaryBlack, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("Theme: ${jam.theme}", style = MaterialTheme.typography.bodyLarge, color = OnSurfaceVariant)
-            Spacer(modifier = Modifier.height(20.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Person, contentDescription = null, tint = SecondaryGray, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("$participants participants", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = SecondaryGray)
-                Spacer(modifier = Modifier.width(20.dp))
-                Icon(Icons.Default.Groups, contentDescription = null, tint = SecondaryGray, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Max ${jam.teamSize} per team", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = SecondaryGray)
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(
-                    onClick = { /* TODO */ },
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, GhostBorder),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlack)
+
+            // ── Card body ────────────────────────────────────────────────────
+            Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("View Details", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(statusColor))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(statusText, style = MaterialTheme.typography.labelLarge, color = PrimaryBlack)
+                    }
+                    Text(timeLeftText, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SecondaryGray)
                 }
-                if (jam.status != ProjectStatus.COMPLETED) {
-                    Button(
-                        onClick = { /* TODO */ },
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    jam.name,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp),
+                    color = PrimaryBlack,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    jam.theme.removePrefix("itch.io"),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = OnSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = SecondaryGray, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("${jam.teamSize} participants", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = SecondaryGray)
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { /* TODO: open jam.theme URL in browser */ },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues()
+                        border = BorderStroke(1.dp, GhostBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlack)
                     ) {
-                        Box(modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark))), contentAlignment = Alignment.Center) {
-                            Text("Join Jam", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text("View Details", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                    if (jam.status != ProjectStatus.COMPLETED) {
+                        Button(
+                            onClick = { /* TODO */ },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                            contentPadding = PaddingValues()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark))
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Join Jam", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+// Shown when coverImageUrl is null or image fails to load
+@Composable
+private fun JamCoverPlaceholder(jamName: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460))
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = jamName.take(1).uppercase(),
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.White.copy(alpha = 0.15f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "🎮",
+                fontSize = 28.sp
+            )
         }
     }
 }

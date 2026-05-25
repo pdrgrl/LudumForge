@@ -20,5 +20,7 @@ data class Project(
     val status: ProjectStatus = ProjectStatus.PLANNING,
     val creatorId: String = "",
     // UIDs of collaborators who joined via invite link (not the creator)
-    val memberIds: List<String> = emptyList()
+    val memberIds: List<String> = emptyList(),
+
+    val coverImageUrl: String? = null
 )

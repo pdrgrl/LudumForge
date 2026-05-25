@@ -2,55 +2,65 @@ package dam.a51319.ludumforge.data.repositories
 
 import dam.a51319.ludumforge.models.Project
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 
 class ItchRepository {
 
     suspend fun getLiveJams(): List<Project> = withContext(Dispatchers.IO) {
-        val jamsList = mutableListOf<Project>()
+
+        // Step 1: scrape the calendar list for titles, URLs, and participant counts
+        data class RawJam(val title: String, val url: String, val participants: Int)
+
+        val rawList = mutableListOf<RawJam>()
         try {
-            // Fetch the live HTML from itch.io/jams
-            val document = Jsoup.connect("https://itch.io/jams").get()
+            val document = Jsoup.connect("https://itch.io/jams")
+                .userAgent("Mozilla/5.0")
+                .timeout(8000)
+                .get()
 
-            // Itch.io currently renders jams as simple .jam_cell divs inside the calendar
-            val jamElements = document.select(".jam_cell")
-
-            for (element in jamElements) {
-                // 1. Get the Title and Link
-                val linkElement = element.select("a").first()
-                val title = linkElement?.text() ?: "Unknown Jam"
-                val jamUrl = linkElement?.attr("href") ?: ""
-
-                // 2. Get Participants
-                // Currently rendered as <span class="joined_count">(45 joined)</span>
-                val joinedElement = element.select(".joined_count").first()
-                val joinedText = joinedElement?.text() ?: "(0 joined)"
-
-                // Extract just the number from "(45 joined)" using Regex
-                val participantsRaw = joinedText.replace("[^0-9]".toRegex(), "")
-                val participants = participantsRaw.toIntOrNull() ?: 0
-
-                // Because the calendar list doesn't expose host or exact dates in this view,
-                // we format the theme as the jam's URL slug and default to UPCOMING.
-                if (title != "Unknown Jam") {
-                    jamsList.add(
-                        Project(
-                            id = "jam_${title.hashCode()}",
-                            name = title,
-                            theme = "itch.io$jamUrl", // Show the URL path as the theme/description
-                            teamSize = participants,
-                            // Default status for calendar items
-                        )
-                    )
-                }
+            document.select(".jam_cell").forEach { element ->
+                val linkElement = element.select("a").first() ?: return@forEach
+                val title = linkElement.text().takeIf { it.isNotBlank() } ?: return@forEach
+                val jamUrl = linkElement.attr("href").takeIf { it.isNotBlank() } ?: return@forEach
+                val joinedText = element.select(".joined_count").first()?.text() ?: "(0 joined)"
+                val participants = joinedText.replace("[^0-9]".toRegex(), "").toIntOrNull() ?: 0
+                rawList.add(RawJam(title, jamUrl, participants))
             }
-
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        // Return the first 50 so we don't overwhelm the UI with 500+ micro-jams
-        return@withContext jamsList.take(50)
+        // Step 2: for the top 20 jams, fetch each jam page in parallel to grab the OG cover image
+        rawList.take(20).map { raw ->
+            async {
+                val imageUrl: String? = try {
+                    val jamDoc = Jsoup.connect("https://itch.io${raw.url}")
+                        .userAgent("Mozilla/5.0")
+                        .timeout(5000)
+                        .get()
+
+                    // Primary: OpenGraph image (used by itch.io for jam banners)
+                    jamDoc.select("meta[property=og:image]").attr("content")
+                        .takeIf { it.isNotBlank() }
+                    // Fallback: inline jam banner or game cover image
+                        ?: jamDoc.select(".jam_banner img, .game_cover img, .header_image img")
+                            .attr("src")
+                            .takeIf { it.isNotBlank() }
+                } catch (e: Exception) {
+                    null // image fetch failed — card will render with placeholder
+                }
+
+                Project(
+                    id = "jam_${raw.title.hashCode()}",
+                    name = raw.title,
+                    theme = "itch.io${raw.url}",
+                    teamSize = raw.participants,
+                    coverImageUrl = imageUrl
+                )
+            }
+        }.awaitAll()
     }
 }
