@@ -1,0 +1,76 @@
+DAM – 2026
+LUDUMFORGE
+Pedro Grilo, n.º 51319
+
+Small Description about the app
+O LudumForge consiste numa aplicação para Android destinada a ajudar programadores de jogos e equipas criativas a gerir e organizar maratonas de desenvolvimento (Game Jams). A aplicação utiliza Inteligência Artificial para gerar automaticamente um plano de tarefas realista com base na ideia do jogo, no tamanho da equipa e no tempo limite, acompanhando o progresso em tempo real.
+Features
+As principais funcionalidades da aplicação são:
+* Criar Projetos (Jams): Adicionar um novo projeto com título, tema, tamanho da equipa e tempo limite.
+* Geração de Roadmap via IA: Inserir uma ideia de jogo, e a aplicação gera um plano de tarefas minuto a minuto, dividido por categorias (Código, Arte e Áudio).
+* Gestão de Tarefas: Adicionar, editar, remover e concluir tarefas individuais, atribuindo estimativas de tempo e responsáveis.
+* Temporizador e Progresso: Um ecrã de contagem decrescente com barras de progresso que alertam os utilizadores se estiverem atrasados em relação ao cronograma.
+* Botão de Pânico (Panic Button): Uma funcionalidade de emergência que elimina automaticamente tarefas não essenciais (polimento, extras) e gera uma lista de sobrevivência para garantir um Produto Mínimo Viável (MVP) antes do fim do prazo.
+* Colaboração em Equipa (Group/Shared): Atribuir tarefas a membros específicos e sincronizar o estado das tarefas em tempo real com toda a equipa.
+* Dashboard Pessoal (Private): Visualização de listas de tarefas individuais e notas pessoais para cada membro.
+* Pesquisa de Jams (Public): Procurar Game Jams ativas através de um feed (ex: itch.io), visualizar temas, prazos e procurar equipas.
+* Modo Offline: Acesso local à lista de tarefas, temporizador e um bloco de notas simples para documentação de game design sem necessidade de internet.
+* Autenticação e Dados: Autenticação de utilizadores e sincronização do estado dos projetos via Firebase, com suporte para guardar dados localmente (SQLite/Room)
+Data Model
+Uma proposta inicial de modelo de dados para a aplicação é:
+Project (Jam)
+* Id (String)
+* Name (String)
+* Theme (String)
+* StartDate (Date)
+* EndDate (Date)
+* TeamSize (Int)
+* Status (String: Planning, Active, Completed)
+
+Task
+* Id (String)
+* ProjectId (String)
+* Title (String)
+* Category (String: Code, Art, Audio)
+* AssignedTo (String - UserId)
+* EstimatedMinutes (Int)
+* Status (String: Pending, InProgress, Done)
+
+User
+* Id (String)
+* Username (String)
+* Email (String)
+* Role (String: Programmer, Artist, Musician)
+
+Team
+* Id (String)
+* ProjectId (String)
+* MembersList (List<String>)
+
+Mock-up of the App
+Uma ideia para um mock-up incial, para já descritivo:
+5 Ecrãs Principais (Arquitetura)
+1. The Arcade (Público): Lista de Game Jams ativas obtidas através de uma API/Feed público. Permite pesquisar por tema e duração.
+2. The Architect (IA): Ecrã onde o utilizador introduz a ideia do jogo e os parâmetros do projeto. A IA processa o texto e devolve a lista estruturada de tarefas.
+3. Dashboard Pessoal (Privado): O ecrã principal durante o evento. Mostra o temporizador, o progresso geral e a lista de tarefas atribuídas exclusivamente ao utilizador com sessão iniciada.
+4. The War Room (Grupo/Partilhado): Quadro geral da equipa (estilo Kanban) onde todos os membros podem ver o que os outros estão a fazer e sincronizar estados.
+5. Modo Terminal (Offline): Ecrã acessível sem internet, com o temporizador em cache e um bloco de notas para apontamentos de lógica ou game design.
+
+Integração de IA
+A aplicação utilizará chamadas a uma API de um modelo de linguagem (LLM) leve para processamento de texto. Através de "Prompt Engineering" oculto na aplicação, a IA recebe a ideia do utilizador e é forçada a devolver um ficheiro JSON estruturado contendo apenas tarefas essenciais e exequíveis dentro do limite de tempo estipulado.
+Funcionalidade Online / Offline
+* Online: Chamadas à API da IA, sincronização de dados da equipa em tempo real no Firebase, e atualização do feed de Jams públicas.
+* Offline: O temporizador continua a funcionar localmente. As tarefas e notas guardadas em cache podem ser consultadas e editadas, sincronizando com a base de dados assim que a ligação for restabelecida.
+
+Subscrições (Free/Premium)
+* Free: Geração padrão de tarefas, acesso ao temporizador offline e limite de 2 projetos de equipa por mês.
+* Premium: Projetos de equipa ilimitados, funcionalidades avançadas do "Botão de Pânico" e estatísticas detalhadas de produtividade pós-evento.
+
+
+
+2
+
+
+
+
+
