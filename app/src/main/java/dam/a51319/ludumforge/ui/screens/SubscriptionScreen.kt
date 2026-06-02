@@ -301,7 +301,7 @@ private fun PlanCard(
             if (isPremium) {
                 Surface(shape = RoundedCornerShape(4.dp), color = if (isCurrentPlan) Color.White else PrimaryBlack) {
                     Text("PREMIUM", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (isCurrentPlan) MoltenOrange else Color.White)
+                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (isCurrentPlan) MoltenOrange else SurfaceBase)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             } else {
