@@ -34,11 +34,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import dam.a51319.ludumforge.data.ActionLog
 
 data class OfflineLogEntry(val timestamp: Date, val type: String, val description: String, val isError: Boolean = false)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
     val context = LocalContext.current
@@ -54,11 +54,33 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
 
     // Collect the REAL logs from Room!
     val terminalLogs by viewModel.logs.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
 
+    OfflineTerminalContent(
+        commandInput = commandInput,
+        sessionTimerSeconds = sessionTimerSeconds,
+        terminalLogs = terminalLogs,
+        isSyncing = isSyncing,
+        onCommandInputChange = { viewModel.noteText.value = it },
+        onManualSync = { viewModel.manualSync() },
+        onSubmitNote = { viewModel.submitNote() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OfflineTerminalContent(
+    commandInput: String,
+    sessionTimerSeconds: Long,
+    terminalLogs: List<ActionLog>,
+    isSyncing: Boolean,
+    onCommandInputChange: (String) -> Unit,
+    onManualSync: () -> Unit,
+    onSubmitNote: () -> Unit
+) {
     val mins = sessionTimerSeconds / 60
     val secs = sessionTimerSeconds % 60
     val formattedTime = String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
-    val isSyncing by viewModel.isSyncing.collectAsState()
 
     Scaffold(
         containerColor = SurfaceBase
@@ -109,7 +131,7 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
                             )
                         }
                         Button(
-                            onClick = { viewModel.manualSync() },
+                            onClick = onManualSync,
                             enabled = !isSyncing,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = SurfaceContainerHigh,
@@ -174,7 +196,7 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
                     Spacer(modifier = Modifier.width(12.dp))
                     BasicTextField(
                         value = commandInput,
-                        onValueChange = { viewModel.noteText.value = it },
+                        onValueChange = onCommandInputChange,
                         modifier = Modifier.weight(1f),
                         textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp, color = PrimaryBlack),
                         singleLine = true,
@@ -189,7 +211,7 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
                         imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Execute",
                         tint = if (commandInput.isNotEmpty()) PrimaryBlack else SecondaryGray.copy(alpha = 0.5f),
-                        modifier = Modifier.size(20.dp).clickable(enabled = commandInput.isNotEmpty()) { viewModel.submitNote() }
+                        modifier = Modifier.size(20.dp).clickable(enabled = commandInput.isNotEmpty()) { onSubmitNote() }
                     )
                 }
             }
@@ -220,5 +242,38 @@ fun TerminalLogLine(log: ActionLog) {
                 Text("Pending Sync...", fontSize = 8.sp, color = ErrorRed, modifier = Modifier.padding(top = 2.dp))
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun OfflineTerminalScreenPreview() {
+    LudumForgeTheme {
+        OfflineTerminalContent(
+            commandInput = "sample note",
+            sessionTimerSeconds = 125L,
+            terminalLogs = listOf(
+                ActionLog(
+                    id = "1",
+                    projectId = "p1",
+                    message = "System initialized",
+                    type = "SYSTEM",
+                    timestamp = System.currentTimeMillis(),
+                    isSynced = true
+                ),
+                ActionLog(
+                    id = "2",
+                    projectId = "p1",
+                    message = "Working on UI",
+                    type = "DEV_NOTE",
+                    timestamp = System.currentTimeMillis() - 10000,
+                    isSynced = false
+                )
+            ),
+            isSyncing = false,
+            onCommandInputChange = {},
+            onManualSync = {},
+            onSubmitNote = {}
+        )
     }
 }

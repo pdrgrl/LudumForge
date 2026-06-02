@@ -26,12 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dam.a51319.ludumforge.models.Task
+import dam.a51319.ludumforge.models.TaskCategory
 import dam.a51319.ludumforge.models.UserPlan
 import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.RoadmapGeneratorViewModel
 import dam.a51319.ludumforge.viewmodels.RoadmapUiState
 import androidx.compose.ui.platform.LocalContext
 import android.content.Context
+import androidx.compose.ui.tooling.preview.Preview
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,9 +75,45 @@ fun RoadmapGeneratorScreen(
     val projectHorizon by viewModel.duration.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
 
+    RoadmapGeneratorContent(
+        projectVision = projectVision,
+        onProjectVisionChange = { viewModel.gameTitle.value = it },
+        teamSize = teamSize,
+        onTeamSizeChange = { viewModel.teamSize.value = it },
+        projectHorizon = projectHorizon,
+        onProjectHorizonChange = { viewModel.duration.value = it },
+        uiState = uiState,
+        isPremium = isPremium,
+        onGenerateClicked = {
+            viewModel.onGenerateClicked(
+                userApiKey = savedApiKey,
+                isPremium = isPremium
+            )
+        },
+        onPushTasksToWorkspace = { tasks -> viewModel.pushSelectedTasksToWorkspace(tasks, context) },
+        onDiscard = { viewModel.discard() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RoadmapGeneratorContent(
+    projectVision: String,
+    onProjectVisionChange: (String) -> Unit,
+    teamSize: String,
+    onTeamSizeChange: (String) -> Unit,
+    projectHorizon: String,
+    onProjectHorizonChange: (String) -> Unit,
+    uiState: RoadmapUiState,
+    isPremium: Boolean,
+    onGenerateClicked: () -> Unit,
+    onPushTasksToWorkspace: (List<Task>) -> Unit,
+    onDiscard: () -> Unit
+) {
+
     val selectedTaskIds = remember(uiState) {
         if (uiState is RoadmapUiState.Success) {
-            mutableStateOf((uiState as RoadmapUiState.Success).tasks.map { it.id }.toMutableSet())
+            mutableStateOf(uiState.tasks.map { it.id }.toMutableSet())
         } else {
             mutableStateOf(mutableSetOf())
         }
@@ -126,7 +164,7 @@ fun RoadmapGeneratorScreen(
                 ) {
                     BasicTextField(
                         value = projectVision,
-                        onValueChange = { viewModel.gameTitle.value = it },
+                        onValueChange = onProjectVisionChange,
                         modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 120.dp),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = PrimaryBlack),
                         decorationBox = { innerTextField ->
@@ -155,7 +193,7 @@ fun RoadmapGeneratorScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     BasicTextField(
                         value = teamSize,
-                        onValueChange = { viewModel.teamSize.value = it },
+                        onValueChange = onTeamSizeChange,
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = PrimaryBlack),
                         decorationBox = { innerTextField ->
@@ -180,7 +218,7 @@ fun RoadmapGeneratorScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     BasicTextField(
                         value = projectHorizon,
-                        onValueChange = { viewModel.duration.value = it },
+                        onValueChange = onProjectHorizonChange,
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = PrimaryBlack),
                         decorationBox = { innerTextField ->
@@ -200,12 +238,7 @@ fun RoadmapGeneratorScreen(
                         .shadow(elevation = 16.dp, shape = RoundedCornerShape(12.dp), spotColor = PrimaryBlack.copy(alpha = 0.2f))
                         .clip(RoundedCornerShape(12.dp))
                         .background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
-                        .clickable {
-                            viewModel.onGenerateClicked(
-                                userApiKey = savedApiKey,
-                                isPremium = isPremium
-                            )
-                        }
+                        .clickable { onGenerateClicked() }
                         .padding(vertical = 18.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -240,7 +273,7 @@ fun RoadmapGeneratorScreen(
                         }
                     }
                     is RoadmapUiState.Error -> {
-                        Text((uiState as RoadmapUiState.Error).message, color = ErrorRed, modifier = Modifier.padding(vertical = 16.dp))
+                        Text(uiState.message, color = ErrorRed, modifier = Modifier.padding(vertical = 16.dp))
                     }
                     is RoadmapUiState.Success -> {
                         Text("REVIEW ROADMAP", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
@@ -289,7 +322,7 @@ fun RoadmapGeneratorScreen(
                     val selectedTasks = allTasks.filter { selectedTaskIds.value.contains(it.id) }
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(
-                            onClick = { viewModel.pushSelectedTasksToWorkspace(selectedTasks, context) },
+                            onClick = { onPushTasksToWorkspace(selectedTasks) },
                             enabled = selectedTasks.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             shape = RoundedCornerShape(8.dp),
@@ -300,7 +333,7 @@ fun RoadmapGeneratorScreen(
                             Text("Add Selected (${selectedTasks.size})", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                         OutlinedButton(
-                            onClick = { viewModel.pushSelectedTasksToWorkspace(allTasks, context) },
+                            onClick = { onPushTasksToWorkspace(allTasks) },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             shape = RoundedCornerShape(8.dp),
                             border = BorderStroke(1.dp, PrimaryBlack)
@@ -308,7 +341,7 @@ fun RoadmapGeneratorScreen(
                             Text("Add All (${allTasks.size})", color = PrimaryBlack, fontWeight = FontWeight.Bold)
                         }
                         TextButton(
-                            onClick = { viewModel.discard() },
+                            onClick = onDiscard,
                             modifier = Modifier.fillMaxWidth().height(50.dp)
                         ) {
                             Text("Discard", color = ErrorRed, fontWeight = FontWeight.Bold)
@@ -365,5 +398,32 @@ fun GeneratedTaskCard(task: Task, isSelected: Boolean, onToggle: () -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
             Text("${task.estimatedMinutes}m", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SecondaryGray.copy(alpha = alpha))
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RoadmapGeneratorScreenPreview() {
+    val sampleTasks = listOf(
+        Task(id = "1", title = "Core Mechanics Prototype", category = TaskCategory.CODE, estimatedMinutes = 120),
+        Task(id = "2", title = "Character Concept Art", category = TaskCategory.ART, estimatedMinutes = 180),
+        Task(id = "3", title = "Level Design Document", category = TaskCategory.DESIGN, estimatedMinutes = 90),
+        Task(id = "4", title = "Background Music Loop", category = TaskCategory.AUDIO, estimatedMinutes = 150)
+    )
+
+    LudumForgeTheme {
+        RoadmapGeneratorContent(
+            projectVision = "A high-octane space racer with modular ship upgrades.",
+            onProjectVisionChange = {},
+            teamSize = "3",
+            onTeamSizeChange = {},
+            projectHorizon = "48h",
+            onProjectHorizonChange = {},
+            uiState = RoadmapUiState.Success(sampleTasks),
+            isPremium = true,
+            onGenerateClicked = {},
+            onPushTasksToWorkspace = {},
+            onDiscard = {}
+        )
     }
 }

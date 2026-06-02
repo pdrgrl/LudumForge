@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,9 +42,46 @@ fun PublicJamsScreen(
     dashboardViewModel: PersonalDashboardViewModel = viewModel(),
     onNavigateToRoadmap: () -> Unit
 ) {
-
     val jams by viewModel.publicJams.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+
+    PublicJamsScreenContent(
+        jams = jams,
+        isLoading = isLoading,
+        onJoinJam = { jam, seedText, size ->
+            dashboardViewModel.createNewJamAndReturnId(
+                name = jam.name,
+                theme = seedText,
+                durationDays = 7,
+                teamSize = size
+            ) { createdJamId ->
+                if (createdJamId != null) {
+                    dam.a51319.ludumforge.data.SessionManager.setActiveJam(
+                        createdJamId,
+                        jam.name
+                    )
+
+                    dam.a51319.ludumforge.data.SessionManager.seedRoadmapInput(
+                        idea = seedText,
+                        teamSize = size.toString(),
+                        duration = "7 days"
+                    )
+
+                    onNavigateToRoadmap()
+                }
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PublicJamsScreenContent(
+    jams: List<Project>,
+    isLoading: Boolean,
+    onJoinJam: (Project, String, Int) -> Unit
+) {
+
     var selectedJamToJoin by remember { mutableStateOf<Project?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
@@ -176,28 +214,8 @@ fun PublicJamsScreen(
                 jam = jam,
                 onDismiss = { selectedJamToJoin = null },
                 onGenerateRoadmap = { seedText, size ->
-                    dashboardViewModel.createNewJamAndReturnId(
-                        name = jam.name,
-                        theme = seedText,
-                        durationDays = 7,
-                        teamSize = size
-                    ) { createdJamId ->
-                        if (createdJamId != null) {
-                            dam.a51319.ludumforge.data.SessionManager.setActiveJam(
-                                createdJamId,
-                                jam.name
-                            )
-
-                            dam.a51319.ludumforge.data.SessionManager.seedRoadmapInput(
-                                idea = seedText,
-                                teamSize = size.toString(),
-                                duration = "7 days"
-                            )
-
-                            selectedJamToJoin = null
-                            onNavigateToRoadmap()
-                        }
-                    }
+                    onJoinJam(jam, seedText, size)
+                    selectedJamToJoin = null
                 }
             )
         }
@@ -386,5 +404,41 @@ private fun JamCoverPlaceholder(jamName: String) {
                 fontSize = 28.sp
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PublicJamsScreenPreview() {
+    val sampleJams = listOf(
+        Project(
+            id = "1",
+            name = "Ludum Dare 55",
+            theme = "Summoning",
+            status = ProjectStatus.ACTIVE,
+            teamSize = 1200
+        ),
+        Project(
+            id = "2",
+            name = "GMTK Game Jam 2024",
+            theme = "Built to Scale",
+            status = ProjectStatus.PLANNING,
+            teamSize = 5000
+        ),
+        Project(
+            id = "3",
+            name = "Global Game Jam 2024",
+            theme = "Make Me Laugh",
+            status = ProjectStatus.COMPLETED,
+            teamSize = 35000
+        )
+    )
+
+    LudumForgeTheme {
+        PublicJamsScreenContent(
+            jams = sampleJams,
+            isLoading = false,
+            onJoinJam = { _, _, _ -> }
+        )
     }
 }

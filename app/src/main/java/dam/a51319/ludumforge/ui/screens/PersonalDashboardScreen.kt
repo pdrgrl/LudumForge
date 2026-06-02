@@ -1,7 +1,6 @@
 package dam.a51319.ludumforge.ui.screens
+
 import dam.a51319.ludumforge.data.SessionManager
-
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +17,7 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,11 +46,7 @@ fun PersonalDashboardScreen(
     val priorityTasks by viewModel.myTasks.collectAsState()
     val activeJamId by SessionManager.activeJamId.collectAsState()
     val myJams by viewModel.myJams.collectAsState()
-    val hours = timeLeft / 3600
-    val minutes = (timeLeft % 3600) / 60
-    val timeDisplay = if (timeLeft < 0L) "--" else "${hours}h ${minutes}m"
     val completionRatios by viewModel.completionRatios.collectAsState()
-    val currentPlan by viewModel.currentPlan.collectAsState()
 
     // ── Jam limit snackbar ───────────────────────────────────────────────────
     val snackbarHostState = remember { SnackbarHostState() }
@@ -66,6 +62,40 @@ fun PersonalDashboardScreen(
             }
         }
     }
+
+    PersonalDashboardContent(
+        timeLeft = timeLeft,
+        priorityTasks = priorityTasks,
+        activeJamId = activeJamId,
+        myJams = myJams,
+        completionRatios = completionRatios,
+        onSelectJam = { project -> SessionManager.setActiveJam(project.id, project.name) },
+        onRenameJam = { id, name -> viewModel.renameJam(id, name) },
+        onDeleteJam = { id -> viewModel.deleteJam(id) },
+        onCreateJam = { name, days -> viewModel.createNewJam(name, "", days) },
+        onUpdateTaskStatus = { id, status -> viewModel.updateTaskStatus(id, status) },
+        snackbarHostState = snackbarHostState
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PersonalDashboardContent(
+    timeLeft: Long,
+    priorityTasks: List<Task>,
+    activeJamId: String?,
+    myJams: List<Project>,
+    completionRatios: Map<String, Float>,
+    onSelectJam: (Project) -> Unit,
+    onRenameJam: (String, String) -> Unit,
+    onDeleteJam: (String) -> Unit,
+    onCreateJam: (String, Int) -> Unit,
+    onUpdateTaskStatus: (String, TaskStatus) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
+) {
+    val hours = timeLeft / 3600
+    val minutes = (timeLeft % 3600) / 60
+    val timeDisplay = if (timeLeft < 0L) "--" else "${hours}h ${minutes}m"
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -103,14 +133,14 @@ fun PersonalDashboardScreen(
                             project = project,
                             isActive = project.id == activeJamId,
                             completionRatio = completionRatios[project.id] ?: 0f,
-                            onSelectJam = { SessionManager.setActiveJam(project.id, project.name) },
-                            onRename = { newName -> viewModel.renameJam(project.id, newName) },
-                            onDelete = { viewModel.deleteJam(project.id) }
+                            onSelectJam = { onSelectJam(project) },
+                            onRename = { newName -> onRenameJam(project.id, newName) },
+                            onDelete = { onDeleteJam(project.id) }
                         )
                     }
                     item {
                         CreateJamCard(
-                            onCreate = { name, days -> viewModel.createNewJam(name, "", days) }
+                            onCreate = { name, days -> onCreateJam(name, days) }
                         )
                     }
                 }
@@ -129,7 +159,7 @@ fun PersonalDashboardScreen(
                     PriorityTaskCard(
                         task = task,
                         projectName = myJams.find { it.id == task.projectId }?.name ?: "Unknown Project",
-                        onStatusChange = { taskId, newStatus -> viewModel.updateTaskStatus(taskId, newStatus) }
+                        onStatusChange = { taskId, newStatus -> onUpdateTaskStatus(taskId, newStatus) }
                     )
                 }
             }
@@ -482,5 +512,34 @@ fun PriorityTaskCard(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PersonalDashboardScreenPreview() {
+    val sampleProjects = listOf(
+        Project(id = "1", name = "LudumForge", theme = "Tools for Jams", status = ProjectStatus.ACTIVE),
+        Project(id = "2", name = "Space Runner", theme = "Endless Space", status = ProjectStatus.PLANNING)
+    )
+    val sampleTasks = listOf(
+        Task(id = "t1", projectId = "1", title = "Implement UI", status = TaskStatus.IN_PROGRESS),
+        Task(id = "t2", projectId = "1", title = "Fix bugs", status = TaskStatus.TODO),
+        Task(id = "t3", projectId = "2", title = "Asset creation", status = TaskStatus.TODO)
+    )
+
+    LudumForgeTheme {
+        PersonalDashboardContent(
+            timeLeft = 3600L * 24 + 1800, // 24h 30m
+            priorityTasks = sampleTasks,
+            activeJamId = "1",
+            myJams = sampleProjects,
+            completionRatios = mapOf("1" to 0.45f, "2" to 0.1f),
+            onSelectJam = {},
+            onRenameJam = { _, _ -> },
+            onDeleteJam = {},
+            onCreateJam = { _, _ -> },
+            onUpdateTaskStatus = { _, _ -> }
+        )
     }
 }

@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BlurOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,9 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dam.a51319.ludumforge.ui.theme.LudumForgeTheme
 import dam.a51319.ludumforge.viewmodels.AuthUiState
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
 
@@ -23,16 +23,30 @@ import dam.a51319.ludumforge.viewmodels.AuthViewModel
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit,
-    viewModel: AuthViewModel = viewModel()
+    viewModel: AuthViewModel = viewModel(),
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) onRegisterSuccess()
     }
+
+    RegisterContent(
+        uiState = uiState,
+        onRegister = { email, password -> viewModel.register(email, password) },
+        onNavigateToLogin = onNavigateToLogin
+    )
+}
+
+@Composable
+fun RegisterContent(
+    uiState: AuthUiState,
+    onRegister: (String, String) -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF0F0F0F)).padding(24.dp),
@@ -51,13 +65,13 @@ fun RegisterScreen(
         AuthInput(value = password, onValueChange = { password = it }, label = "PASSWORD", isPassword = true)
 
         if (uiState is AuthUiState.Error) {
-            Text((uiState as AuthUiState.Error).message, color = Color(0xFFBA1A1A), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+            Text(uiState.message, color = Color(0xFFBA1A1A), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
         }
 
         Spacer(Modifier.height(40.dp))
 
         Button(
-            onClick = { viewModel.register(email, password) },
+            onClick = { onRegister(email, password) },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
@@ -78,6 +92,18 @@ fun RegisterScreen(
             color = Color.Gray,
             fontSize = 13.sp,
             modifier = Modifier.clickable { onNavigateToLogin() }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RegisterScreenPreview() {
+    LudumForgeTheme {
+        RegisterContent(
+            uiState = AuthUiState.Idle,
+            onRegister = { _, _ -> },
+            onNavigateToLogin = {}
         )
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,15 +58,51 @@ fun SubscriptionScreen(
         dashboardViewModel.refreshSubscriptionState()
     }
 
+    if (upgrading) {
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(1200)
+            val result = dashboardViewModel.upgradeToPremium()
+            if (result.isSuccess) {
+                authViewModel.fetchUserProfile()
+            }
+            upgrading = false
+            showSuccessDialog = result.isSuccess
+        }
+    }
+
+    SubscriptionContent(
+        currentPlan = currentPlan,
+        activeJamCount = activeJamCount,
+        upgrading = upgrading,
+        showSuccessDialog = showSuccessDialog,
+        onUpgradeClick = { upgrading = true },
+        onDismissSuccessDialog = { showSuccessDialog = false },
+        onNavigateBackFromSuccess = {
+            showSuccessDialog = false
+            onNavigateBack()
+        }
+    )
+}
+
+@Composable
+fun SubscriptionContent(
+    currentPlan: UserPlan,
+    activeJamCount: Int,
+    upgrading: Boolean,
+    showSuccessDialog: Boolean,
+    onUpgradeClick: () -> Unit,
+    onDismissSuccessDialog: () -> Unit,
+    onNavigateBackFromSuccess: () -> Unit
+) {
     if (showSuccessDialog) {
         AlertDialog(
-            onDismissRequest = { showSuccessDialog = false },
+            onDismissRequest = onDismissSuccessDialog,
             containerColor = SurfaceContainerLowest,
             title = { Text("⭐ Welcome to Premium!", fontWeight = FontWeight.Bold, color = PrimaryBlack) },
             text = { Text("You now have unlimited jams, the Panic Button, and priority AI generation.", color = SecondaryGray) },
             confirmButton = {
                 Button(
-                    onClick = { showSuccessDialog = false; onNavigateBack() },
+                    onClick = onNavigateBackFromSuccess,
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
                 ) { Text("Let's go!", color = Color.White) }
             }
@@ -210,7 +247,7 @@ fun SubscriptionScreen(
             }
             UserPlan.FREE -> {
                 Button(
-                    onClick = { upgrading = true },
+                    onClick = onUpgradeClick,
                     enabled = !upgrading,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(12.dp),
@@ -227,15 +264,6 @@ fun SubscriptionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (upgrading) {
-                            LaunchedEffect(Unit) {
-                                kotlinx.coroutines.delay(1200)
-                                val result = dashboardViewModel.upgradeToPremium()
-                                if (result.isSuccess) {
-                                    authViewModel.fetchUserProfile()
-                                }
-                                upgrading = false
-                                showSuccessDialog = result.isSuccess
-                            }
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -315,5 +343,37 @@ private fun FeatureCell(enabled: Boolean, modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         if (enabled) Icon(Icons.Default.CheckCircle, contentDescription = "Included", tint = PrimaryBlack, modifier = Modifier.size(18.dp))
         else Icon(Icons.Default.Lock, contentDescription = "Not included", tint = GhostBorder, modifier = Modifier.size(16.dp))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SubscriptionScreenFreePreview() {
+    LudumForgeTheme {
+        SubscriptionContent(
+            currentPlan = UserPlan.FREE,
+            activeJamCount = 1,
+            upgrading = false,
+            showSuccessDialog = false,
+            onUpgradeClick = {},
+            onDismissSuccessDialog = {},
+            onNavigateBackFromSuccess = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SubscriptionScreenPremiumPreview() {
+    LudumForgeTheme {
+        SubscriptionContent(
+            currentPlan = UserPlan.PREMIUM,
+            activeJamCount = 2,
+            upgrading = false,
+            showSuccessDialog = false,
+            onUpgradeClick = {},
+            onDismissSuccessDialog = {},
+            onNavigateBackFromSuccess = {}
+        )
     }
 }

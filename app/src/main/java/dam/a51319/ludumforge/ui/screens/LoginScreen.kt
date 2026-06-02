@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dam.a51319.ludumforge.viewmodels.AuthUiState
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
+import androidx.compose.ui.tooling.preview.Preview
+import dam.a51319.ludumforge.ui.theme.LudumForgeTheme
 import dam.a51319.ludumforge.R
 
 @Composable
@@ -34,8 +35,6 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val webClientId = stringResource(R.string.default_web_client_id)
@@ -43,6 +42,24 @@ fun LoginScreen(
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) onLoginSuccess()
     }
+
+    LoginScreenContent(
+        uiState = uiState,
+        onLogin = { email, password -> viewModel.login(email, password) },
+        onLoginWithGoogle = { viewModel.loginWithGoogle(context, webClientId) },
+        onNavigateToRegister = onNavigateToRegister
+    )
+}
+
+@Composable
+fun LoginScreenContent(
+    uiState: AuthUiState,
+    onLogin: (String, String) -> Unit,
+    onLoginWithGoogle: () -> Unit,
+    onNavigateToRegister: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -78,7 +95,7 @@ fun LoginScreen(
 
         if (uiState is AuthUiState.Error) {
             Text(
-                (uiState as AuthUiState.Error).message,
+                uiState.message,
                 color = Color(0xFFBA1A1A),
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 8.dp)
@@ -89,7 +106,7 @@ fun LoginScreen(
 
         // Premium Action Button
         Button(
-            onClick = { viewModel.login(email, password) },
+            onClick = { onLogin(email, password) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -131,7 +148,7 @@ fun LoginScreen(
         Spacer(Modifier.height(16.dp))
 
         OutlinedButton(
-            onClick = { viewModel.loginWithGoogle(context, webClientId) },
+            onClick = onLoginWithGoogle,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
@@ -154,6 +171,19 @@ fun LoginScreen(
             color = Color.Gray,
             fontSize = 13.sp,
             modifier = Modifier.clickable { onNavigateToRegister() }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoginScreenPreview() {
+    LudumForgeTheme {
+        LoginScreenContent(
+            uiState = AuthUiState.Idle,
+            onLogin = { _, _ -> },
+            onLoginWithGoogle = { },
+            onNavigateToRegister = { }
         )
     }
 }
