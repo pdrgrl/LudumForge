@@ -258,7 +258,7 @@ fun SubscriptionContent(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
-                                Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)),
+                                Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd)),
                                 shape = RoundedCornerShape(12.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -293,15 +293,15 @@ private fun PlanCard(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = if (isPremium && isCurrentPlan) PrimaryBlack else SurfaceContainerLowest),
+        colors = CardDefaults.cardColors(containerColor = if (isPremium && isCurrentPlan) MoltenOrange else SurfaceContainerLowest),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(if (isCurrentPlan) 2.dp else 1.dp, if (isCurrentPlan) PrimaryBlack else GhostBorder)
+        border = BorderStroke(if (isCurrentPlan) 2.dp else 1.dp, if (isCurrentPlan) (if (isPremium) MoltenOrange else PrimaryBlack) else GhostBorder)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             if (isPremium) {
-                Surface(shape = RoundedCornerShape(4.dp), color = if (isCurrentPlan) Color.White.copy(alpha = 0.15f) else PrimaryBlack) {
+                Surface(shape = RoundedCornerShape(4.dp), color = if (isCurrentPlan) Color.White else PrimaryBlack) {
                     Text("PREMIUM", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (isCurrentPlan) MoltenOrange else Color.White)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             } else {

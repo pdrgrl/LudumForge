@@ -144,7 +144,7 @@ fun OfflineTerminalContent(
                             if (isSyncing) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(14.dp),
-                                    color = PrimaryBlack,
+                                    color = MoltenOrange,
                                     strokeWidth = 2.dp
                                 )
                             } else {
@@ -210,7 +210,7 @@ fun OfflineTerminalContent(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Execute",
-                        tint = if (commandInput.isNotEmpty()) PrimaryBlack else SecondaryGray.copy(alpha = 0.5f),
+                        tint = if (commandInput.isNotEmpty()) MoltenOrange else SecondaryGray.copy(alpha = 0.5f),
                         modifier = Modifier.size(20.dp).clickable(enabled = commandInput.isNotEmpty()) { onSubmitNote() }
                     )
                 }
@@ -226,7 +226,7 @@ fun TerminalLogLine(log: ActionLog) {
 
     // Color coding based on the type of event
     val tagColor = when(log.type) {
-        "SYSTEM" -> Color(0xFF00C853) // Green for system events
+        "SYSTEM" -> CyberCyan
         "DEV_NOTE" -> SecondaryGray    // Gray for manual notes
         else -> PrimaryBlack
     }

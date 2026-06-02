@@ -45,4 +45,11 @@ object SessionManager {
         _activeJamId.value = null
         _activeJamName.value = null
     }
+
+    private val _isDarkTheme = MutableStateFlow<Boolean>(true)
+    val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
+
+    fun setDarkTheme(enabled: Boolean) {
+        _isDarkTheme.value = enabled
+    }
 }

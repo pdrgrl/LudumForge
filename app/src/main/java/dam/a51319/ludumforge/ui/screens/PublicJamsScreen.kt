@@ -362,7 +362,7 @@ fun JamCard(jam: Project, onJoinClicked: (Project) -> Unit) {
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(
-                                        Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark))
+                                        Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd))
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {

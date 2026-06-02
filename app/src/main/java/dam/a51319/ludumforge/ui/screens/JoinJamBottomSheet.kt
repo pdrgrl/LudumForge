@@ -1,5 +1,6 @@
 package dam.a51319.ludumforge.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -91,7 +93,7 @@ private fun JoinJamBottomSheetUI(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = PrimaryBlack)
+                        CircularProgressIndicator(color = MoltenOrange)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             if (currentState is JoinJamState.LoadingSummary) "Analyzing Jam Rules..." else "Brainstorming Idea...",
@@ -131,19 +133,19 @@ private fun JoinJamBottomSheetUI(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFFFE0B2), RoundedCornerShape(8.dp))
+                        .background(MoltenOrange.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                         .padding(12.dp)
                 ) {
                     Icon(
                         Icons.Default.Warning,
                         contentDescription = null,
-                        tint = Color(0xFFE65100)
+                        tint = MoltenOrange
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         "Remember: You still must click 'Join' on the actual itch.io page to officially participate!",
                         fontSize = 13.sp,
-                        color = Color(0xFFE65100),
+                        color = PrimaryBlack,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -160,19 +162,20 @@ private fun JoinJamBottomSheetUI(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Team Size: ${teamSize.toInt()}", fontWeight = FontWeight.Bold)
+                Text("Team Size: ${teamSize.toInt()}", fontWeight = FontWeight.Bold, color = PrimaryBlack)
                 Slider(
                     value = teamSize,
                     onValueChange = onTeamSizeChange,
                     valueRange = 1f..10f,
                     steps = 9,
                     colors = SliderDefaults.colors(
-                        thumbColor = PrimaryBlack,
-                        activeTrackColor = PrimaryBlack
+                        thumbColor = MoltenOrange,
+                        activeTrackColor = MoltenOrange,
+                        inactiveTrackColor = SurfaceContainerHigh
                     )
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-
+ 
                 Button(
                     onClick = {
                         onBrainstormIdea(
@@ -185,8 +188,18 @@ private fun JoinJamBottomSheetUI(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
-                ) { Text("Brainstorm with AI") }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd)), RoundedCornerShape(100.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Brainstorm with AI", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
 
             is JoinJamState.BrainstormResult -> {
@@ -212,15 +225,27 @@ private fun JoinJamBottomSheetUI(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
-                ) { Text("Yes, Generate Roadmap") }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd)), RoundedCornerShape(100.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Yes, Generate Roadmap", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedButton(
                     onClick = { onRefineIdea(currentState.theme, currentState.rules) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                ) { Text("Refine Idea", color = PrimaryBlack) }
+                    border = BorderStroke(1.dp, MoltenOrange),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MoltenOrange)
+                ) { Text("Refine Idea", fontWeight = FontWeight.Bold) }
             }
 
             is JoinJamState.Error -> {
@@ -236,9 +261,9 @@ private fun JoinJamBottomSheetUI(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = onExtractJamInfo,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                        colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                     ) {
-                        Text("Try Again")
+                        Text("Try Again", color = Color.White)
                     }
                 }
             }

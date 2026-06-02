@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dam.a51319.ludumforge.ui.theme.LudumForgeTheme
+import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.AuthUiState
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
 
@@ -53,12 +53,12 @@ fun RegisterContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("NEW ARCHITECT", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 2.sp)
+        Text("NEW JAMMER", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 2.sp)
         Text("Create Account", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
 
         Spacer(Modifier.height(48.dp))
 
-        AuthInput(value = username, onValueChange = { username = it }, label = "STUDIO USERNAME")
+        AuthInput(value = username, onValueChange = { username = it }, label = "JAMMER USERNAME")
         Spacer(Modifier.height(16.dp))
         AuthInput(value = email, onValueChange = { email = it }, label = "EMAIL ADDRESS")
         Spacer(Modifier.height(16.dp))
@@ -78,11 +78,11 @@ fun RegisterContent(
             contentPadding = PaddingValues()
         ) {
             Box(
-                Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color.White, Color(0xFFCCCCCC)))),
+                Modifier.fillMaxSize().background(Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd))),
                 contentAlignment = Alignment.Center
             ) {
-                if (uiState is AuthUiState.Loading) CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
-                else Text("REGISTER", color = Color.Black, fontWeight = FontWeight.Bold)
+                if (uiState is AuthUiState.Loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                else Text("REGISTER", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
 

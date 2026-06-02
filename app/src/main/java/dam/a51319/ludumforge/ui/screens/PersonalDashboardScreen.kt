@@ -203,11 +203,11 @@ fun ActiveProjectCard(
     Card(
         modifier = Modifier
             .width(280.dp)
-            .shadow(elevation = if (isActive) 12.dp else 8.dp, shape = RoundedCornerShape(16.dp), spotColor = PrimaryBlack.copy(alpha = 0.08f))
+            .shadow(elevation = if (isActive) 12.dp else 8.dp, shape = RoundedCornerShape(16.dp), spotColor = MoltenOrange.copy(alpha = 0.2f))
             .clickable { onSelectJam() },
-        colors = CardDefaults.cardColors(containerColor = if (isActive) PrimaryBlack else SurfaceContainerLowest),
+        colors = CardDefaults.cardColors(containerColor = if (isActive) SurfaceContainerHigh else SurfaceContainerLowest),
         shape = RoundedCornerShape(16.dp),
-        border = if (isActive) null else BorderStroke(1.dp, GhostBorder)
+        border = if (isActive) BorderStroke(2.dp, MoltenOrange) else BorderStroke(1.dp, GhostBorder)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -219,21 +219,21 @@ fun ActiveProjectCard(
                 Text(
                     "Completion",
                     fontSize = 10.sp,
-                    color = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
+                    color = if (isActive) MoltenOrange else SecondaryGray
                 )
                 Text(
                     "${(completionRatio * 100).toInt()}%",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isActive) Color.White else PrimaryBlack
+                    color = PrimaryBlack
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
             LinearProgressIndicator(
                 progress = { completionRatio },
                 modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)),
-                color = if (isActive) Color.White else PrimaryBlack,
-                trackColor = if (isActive) Color.White.copy(alpha = 0.2f) else SurfaceContainerHigh
+                color = if (isActive) CyberCyan else MoltenOrange,
+                trackColor = SurfaceContainerHigh
             )
             Spacer(modifier = Modifier.height(20.dp))
             Row(
@@ -244,13 +244,13 @@ fun ActiveProjectCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (isActive) Color.White.copy(alpha = 0.15f) else SurfaceContainerHigh)
+                        .background(if (isActive) MoltenOrange.copy(alpha = 0.15f) else SurfaceContainerHigh)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         if (isActive) "● ACTIVE JAM" else project.status.name,
                         fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        color = if (isActive) Color.White else PrimaryBlack,
+                        color = if (isActive) MoltenOrange else PrimaryBlack,
                         letterSpacing = 0.5.sp
                     )
                 }
@@ -258,7 +258,7 @@ fun ActiveProjectCard(
                     IconButton(onClick = { showOptionsMenu = true }, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.Default.MoreHoriz, contentDescription = "Options",
-                            tint = if (isActive) Color.White.copy(alpha = 0.6f) else SecondaryGray
+                            tint = if (isActive) MoltenOrange else SecondaryGray
                         )
                     }
                     DropdownMenu(
@@ -283,14 +283,14 @@ fun ActiveProjectCard(
             Text(
                 project.name,
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-                color = if (isActive) Color.White else PrimaryBlack,
+                color = PrimaryBlack,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 "Theme: ${project.theme}",
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (isActive) Color.White.copy(alpha = 0.7f) else OnSurfaceVariant,
+                color = if (isActive) PrimaryBlack.copy(alpha = 0.7f) else OnSurfaceVariant,
                 fontSize = 13.sp
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -298,19 +298,19 @@ fun ActiveProjectCard(
                 onClick = { onSelectJam() },
                 modifier = Modifier.fillMaxWidth().height(44.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if (isActive) Color.White else Color.Transparent),
+                colors = ButtonDefaults.buttonColors(containerColor = if (isActive) SurfaceContainerLowest else Color.Transparent),
                 contentPadding = PaddingValues()
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize().then(
                         if (isActive) Modifier.background(Color.Transparent)
-                        else Modifier.background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
+                        else Modifier.background(Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd)))
                     ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         if (isActive) "✓ Selected" else "Select Jam",
-                        color = if (isActive) PrimaryBlack else Color.White,
+                        color = if (isActive) CyberCyan else Color.White,
                         fontWeight = FontWeight.Bold, fontSize = 13.sp
                     )
                 }
@@ -330,7 +330,7 @@ fun ActiveProjectCard(
                             Button(
                                 onClick = { onRename(renameInput); showRenameDialog = false },
                                 enabled = renameInput.isNotBlank(),
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                                colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                             ) { Text("Save", color = Color.White) }
                         },
                         dismissButton = { TextButton(onClick = { showRenameDialog = false }) { Text("Cancel", color = PrimaryBlack) } }
@@ -440,7 +440,7 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) {
                 Button(
                     onClick = { onCreate(jamName, selectedDays); showDialog = false; jamName = ""; selectedDays = 7 },
                     enabled = jamName.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                    colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                 ) { Text("Create", color = Color.White) }
             },
             dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel", color = PrimaryBlack) } }

@@ -131,7 +131,7 @@ fun RoadmapGeneratorContent(
                 Text("Roadmap Generator", style = MaterialTheme.typography.headlineLarge, color = PrimaryBlack)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    "Architect your development cycle with precision. Input your vision to generate a surgically precise jam blueprint.",
+                    "Forge your development cycle with precision. Input your vision to generate a precision game jam roadmap.",
                     style = MaterialTheme.typography.bodyLarge, color = OnSurfaceVariant
                 )
                 // Premium badge
@@ -139,7 +139,7 @@ fun RoadmapGeneratorContent(
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = PrimaryBlack
+                        color = MoltenOrange
                     ) {
                         Text(
                             "⭐ Premium — AI generation unlocked",
@@ -230,14 +230,13 @@ fun RoadmapGeneratorContent(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Generate button
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(elevation = 16.dp, shape = RoundedCornerShape(12.dp), spotColor = PrimaryBlack.copy(alpha = 0.2f))
+                        .shadow(elevation = 16.dp, shape = RoundedCornerShape(12.dp), spotColor = MoltenOrange.copy(alpha = 0.3f))
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Brush.linearGradient(listOf(PrimaryBlack, PrimaryContainerDark)))
+                        .background(Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd)))
                         .clickable { onGenerateClicked() }
                         .padding(vertical = 18.dp),
                     contentAlignment = Alignment.Center
@@ -257,7 +256,7 @@ fun RoadmapGeneratorContent(
                     is RoadmapUiState.Loading -> {
                         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator(color = PrimaryBlack)
+                                CircularProgressIndicator(color = MoltenOrange)
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text("Generating roadmap...", color = SecondaryGray, fontSize = 13.sp)
                             }
@@ -266,7 +265,7 @@ fun RoadmapGeneratorContent(
                     is RoadmapUiState.Pushing -> {
                         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator(color = PrimaryBlack)
+                                CircularProgressIndicator(color = MoltenOrange)
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text("Forging tasks into workspace...", color = SecondaryGray, fontSize = 13.sp)
                             }
@@ -290,9 +289,9 @@ fun RoadmapGeneratorContent(
                         ) {
                             Column(modifier = Modifier.padding(24.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryBlack, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.Info, contentDescription = null, tint = MoltenOrange, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Architect's Protocol", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                                    Text("Jammer's Protocol", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
                                 }
                                 Spacer(modifier = Modifier.height(24.dp))
                                 ProtocolStep("01", "Be specific about genre and target platforms to ensure asset pipeline accuracy.")
@@ -326,7 +325,7 @@ fun RoadmapGeneratorContent(
                             enabled = selectedTasks.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                            colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                         ) {
                             Icon(Icons.Default.RocketLaunch, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
@@ -336,9 +335,9 @@ fun RoadmapGeneratorContent(
                             onClick = { onPushTasksToWorkspace(allTasks) },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, PrimaryBlack)
+                            border = BorderStroke(1.dp, MoltenOrange)
                         ) {
-                            Text("Add All (${allTasks.size})", color = PrimaryBlack, fontWeight = FontWeight.Bold)
+                            Text("Add All (${allTasks.size})", color = MoltenOrange, fontWeight = FontWeight.Bold)
                         }
                         TextButton(
                             onClick = onDiscard,
@@ -378,10 +377,10 @@ fun GeneratedTaskCard(task: Task, isSelected: Boolean, onToggle: () -> Unit) {
         border = BorderStroke(1.dp, if (isSelected) PrimaryBlack.copy(alpha = 0.15f) else GhostBorder)
     ) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
+             Checkbox(
                 checked = isSelected, onCheckedChange = { onToggle() },
-                colors = CheckboxDefaults.colors(checkedColor = PrimaryBlack, uncheckedColor = SecondaryGray)
-            )
+                colors = CheckboxDefaults.colors(checkedColor = CyberCyan, uncheckedColor = SecondaryGray, checkmarkColor = SurfaceBase)
+             )
             Spacer(modifier = Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(task.category.name, style = MaterialTheme.typography.labelLarge, color = SecondaryGray.copy(alpha = alpha))

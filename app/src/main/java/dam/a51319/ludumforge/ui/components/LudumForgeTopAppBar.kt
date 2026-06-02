@@ -39,6 +39,7 @@ fun LudumForgeTopAppBar(
     val context = LocalContext.current
     val sharedPrefs = remember { context.getSharedPreferences("LudumForgePrefs", Context.MODE_PRIVATE) }
     var apiKeyInput by remember { mutableStateOf(sharedPrefs.getString("gemini_api_key", "") ?: "") }
+    var isDarkThemeState by remember { mutableStateOf(sharedPrefs.getBoolean("is_dark_theme", true)) }
 
     val isPremium = currentUser?.plan == UserPlan.PREMIUM
 
@@ -73,7 +74,7 @@ fun LudumForgeTopAppBar(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .background(if (isPremium) PrimaryBlack else SurfaceContainerHigh)
+                    .background(if (isPremium) MoltenOrange else SurfaceContainerHigh)
                     .clickable { onNavigateToSubscription() }
                     .padding(horizontal = 10.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -139,15 +140,40 @@ fun LudumForgeTopAppBar(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Dark Theme", fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                            Text("Switch between light and dark modes", fontSize = 11.sp, color = SecondaryGray)
+                        }
+                        Switch(
+                            checked = isDarkThemeState,
+                            onCheckedChange = { isDarkThemeState = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = MoltenOrange,
+                                uncheckedThumbColor = SecondaryGray,
+                                uncheckedTrackColor = SurfaceContainerHigh
+                            )
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        sharedPrefs.edit().putString("gemini_api_key", apiKeyInput).apply()
+                        sharedPrefs.edit()
+                            .putString("gemini_api_key", apiKeyInput)
+                            .putBoolean("is_dark_theme", isDarkThemeState)
+                            .apply()
+                        SessionManager.setDarkTheme(isDarkThemeState)
                         showSettings = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                    colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                 ) { Text("Save", color = Color.White) }
             },
             dismissButton = {

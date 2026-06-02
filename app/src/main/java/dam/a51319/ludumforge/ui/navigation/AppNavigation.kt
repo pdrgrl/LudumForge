@@ -2,7 +2,7 @@ package dam.a51319.ludumforge.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Architecture
+import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Groups
@@ -168,7 +168,7 @@ fun LudumForgeBottomBar(navController: NavHostController, currentRoute: String?)
         tonalElevation = 8.dp
     ) {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Architecture, contentDescription = "Planning") },
+            icon = { Icon(Icons.Default.Construction, contentDescription = "Planning") },
             label = { Text("Planning", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             selected = currentRoute == Routes.PERSONAL_DASHBOARD,
             onClick = { navigateToTab(navController, Routes.PERSONAL_DASHBOARD) },

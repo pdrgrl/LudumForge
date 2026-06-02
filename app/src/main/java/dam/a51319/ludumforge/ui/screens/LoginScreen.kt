@@ -26,7 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dam.a51319.ludumforge.viewmodels.AuthUiState
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
 import androidx.compose.ui.tooling.preview.Preview
-import dam.a51319.ludumforge.ui.theme.LudumForgeTheme
+import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.R
 
 @Composable
@@ -79,7 +79,7 @@ fun LoginScreenContent(
             color = Color.White,
             letterSpacing = 4.sp
         )
-        Text("Architect your vision.", fontSize = 14.sp, color = Color.Gray)
+        Text("Forge your vision.", fontSize = 14.sp, color = Color.Gray)
 
         Spacer(Modifier.height(48.dp))
 
@@ -117,14 +117,14 @@ fun LoginScreenContent(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Brush.linearGradient(listOf(Color.White, Color(0xFFCCCCCC)))),
+                    .background(Brush.linearGradient(listOf(MoltenOrange, MoltenOrangeEnd))),
                 contentAlignment = Alignment.Center
             ) {
                 if (uiState is AuthUiState.Loading) CircularProgressIndicator(
-                    color = Color.Black,
+                    color = Color.White,
                     modifier = Modifier.size(24.dp)
                 )
-                else Text("SIGN IN", color = Color.Black, fontWeight = FontWeight.Bold)
+                else Text("SIGN IN", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
 

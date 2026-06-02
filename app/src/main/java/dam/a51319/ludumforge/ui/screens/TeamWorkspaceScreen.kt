@@ -222,8 +222,8 @@ fun TeamWorkspaceContent(
             if (activeJamId != null) {
                 FloatingActionButton(
                     onClick = { showAddSheet = true },
-                    containerColor = PrimaryBlack,
-                    contentColor = SurfaceContainerLowest,
+                    containerColor = MoltenOrange,
+                    contentColor = Color.White,
                     shape = CircleShape,
                     elevation = FloatingActionButtonDefaults.elevation(8.dp)
                 ) {
@@ -489,7 +489,7 @@ private fun TaskFormSheet(
                     onClick = { onCategoryChange(category) },
                     label = { Text(category.name) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = PrimaryBlack,
+                        selectedContainerColor = MoltenOrange,
                         selectedLabelColor = Color.White
                     )
                 )
@@ -508,7 +508,7 @@ private fun TaskFormSheet(
                     onClick = { onAssigneeChange(null) },
                     label = { Text("None") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = PrimaryBlack,
+                        selectedContainerColor = MoltenOrange,
                         selectedLabelColor = Color.White
                     )
                 )
@@ -531,7 +531,7 @@ private fun TaskFormSheet(
                         },
                         label = { Text(user.username) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = PrimaryBlack,
+                            selectedContainerColor = MoltenOrange,
                             selectedLabelColor = Color.White
                         )
                     )
@@ -545,7 +545,7 @@ private fun TaskFormSheet(
             enabled = taskTitle.isNotBlank(),
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+            colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
         ) {
             Text(confirmLabel, color = Color.White, fontWeight = FontWeight.Bold)
         }
@@ -561,7 +561,7 @@ fun ColumnHeader(title: String, count: Int) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).border(2.dp, PrimaryBlack, CircleShape))
+            Box(modifier = Modifier.size(10.dp).clip(CircleShape).border(2.dp, MoltenOrange, CircleShape))
             Spacer(modifier = Modifier.width(12.dp))
             Text(title, style = MaterialTheme.typography.labelLarge, color = PrimaryBlack)
         }
@@ -645,7 +645,7 @@ fun TaskCard(
                     LinearProgressIndicator(
                         progress = { 0.65f },
                         modifier = Modifier.fillMaxWidth().height(2.dp),
-                        color = PrimaryBlack,
+                        color = MoltenOrange,
                         trackColor = SurfaceContainerHigh
                     )
                 }
