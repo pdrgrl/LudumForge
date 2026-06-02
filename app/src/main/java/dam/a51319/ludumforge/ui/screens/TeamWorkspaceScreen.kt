@@ -158,61 +158,16 @@ fun TeamWorkspaceContent(
             sheetState = inviteSheetState,
             containerColor = SurfaceBase
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .padding(bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    Icons.Default.Groups,
-                    contentDescription = null,
-                    tint = PrimaryBlack,
-                    modifier = Modifier.size(40.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "You've been invited!",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlack
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Join jam:",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = SecondaryGray
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    pendingInviteJam.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlack
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-                Button(
-                    onClick = {
-                        onAcceptInvite()
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Joined \"${pendingInviteJam.name}\"! Find it in your dashboard.")
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
-                ) {
-                    Text("Join Jam", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                TextButton(
-                    onClick = { onClearPendingInvite() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Decline", color = SecondaryGray)
-                }
-            }
+            InviteJamSheet(
+                jamName = pendingInviteJam.name,
+                onAccept = {
+                    onAcceptInvite()
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Joined \"${pendingInviteJam.name}\"! Find it in your dashboard.")
+                    }
+                },
+                onDecline = { onClearPendingInvite() }
+            )
         }
     }
 
@@ -420,7 +375,64 @@ fun TeamWorkspaceContent(
     }
 }
 
-// ── Shared form composable (Add + Edit reuse) ────────────────────────────
+// ── Invite Sheet Content ──────────────────────────────────────────────────
+@Composable
+private fun InviteJamSheet(
+    jamName: String,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp)
+            .padding(bottom = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            Icons.Default.Groups,
+            contentDescription = null,
+            tint = PrimaryBlack,
+            modifier = Modifier.size(40.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "You've been invited!",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryBlack
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            "Join jam:",
+            style = MaterialTheme.typography.bodyLarge,
+            color = SecondaryGray
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            jamName,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = PrimaryBlack
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        Button(
+            onClick = onAccept,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
+        ) {
+            Text("Join Jam", color = Color.White, fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        TextButton(
+            onClick = onDecline,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Decline", color = SecondaryGray)
+        }
+    }
+}
 @Composable
 private fun TaskFormSheet(
     title: String,
@@ -688,7 +700,7 @@ fun TaskCard(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Active Workspace")
 @Composable
 fun TeamWorkspaceScreenPreview() {
     val sampleUsers = listOf(
@@ -715,6 +727,124 @@ fun TeamWorkspaceScreenPreview() {
             onUpdateTask = { _, _, _, _, _ -> },
             onClearPendingInvite = {},
             onAcceptInvite = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Empty Workspace")
+@Composable
+fun TeamWorkspaceEmptyPreview() {
+    LudumForgeTheme {
+        TeamWorkspaceContent(
+            teamTasks = emptyList(),
+            realUsers = emptyList(),
+            activeJamId = null,
+            activeJamName = null,
+            pendingInviteJam = null,
+            onDeleteTask = { _, _ -> },
+            onUpdateTaskStatus = { _, _, _ -> },
+            onAddTask = { _, _, _, _ -> },
+            onUpdateTask = { _, _, _, _, _ -> },
+            onClearPendingInvite = {},
+            onAcceptInvite = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Pending Invite")
+@Composable
+fun TeamWorkspaceInvitePreview() {
+    val sampleJam = Project(id = "jam_456", name = "Cyberpunk Jam 2077", theme = "Neon Lights", status = ProjectStatus.PLANNING)
+
+    LudumForgeTheme {
+        TeamWorkspaceContent(
+            teamTasks = emptyList(),
+            realUsers = emptyList(),
+            activeJamId = "jam_123",
+            activeJamName = "Active Project",
+            pendingInviteJam = sampleJam,
+            onDeleteTask = { _, _ -> },
+            onUpdateTaskStatus = { _, _, _ -> },
+            onAddTask = { _, _, _, _ -> },
+            onUpdateTask = { _, _, _, _, _ -> },
+            onClearPendingInvite = {},
+            onAcceptInvite = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Task Card")
+@Composable
+fun TaskCardPreview() {
+    val sampleUser = User(id = "u1", username = "Pedro")
+    val sampleTask = Task(
+        id = "t1",
+        title = "Implement Character Movement",
+        category = TaskCategory.CODE,
+        status = TaskStatus.IN_PROGRESS,
+        estimatedMinutes = 90,
+        assignedTo = "u1"
+    )
+
+    LudumForgeTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            TaskCard(
+                task = sampleTask,
+                allUsers = listOf(sampleUser),
+                onStatusChange = { _, _ -> }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Column Header")
+@Composable
+fun ColumnHeaderPreview() {
+    LudumForgeTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            ColumnHeader(title = "IN PROGRESS", count = 3)
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Invite Jam Sheet")
+@Composable
+fun InviteJamSheetPreview() {
+    LudumForgeTheme {
+        InviteJamSheet(
+            jamName = "Global Game Jam 2024",
+            onAccept = {},
+            onDecline = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Task Form Sheet")
+@Composable
+fun TaskFormSheetPreview() {
+    val sampleUsers = listOf(
+        User(id = "u1", username = "Pedro"),
+        User(id = "u2", username = "John Doe")
+    )
+    LudumForgeTheme {
+        TaskFormSheet(
+            title = "Create New Task",
+            taskTitle = "Build Physics Engine",
+            taskMinutes = "120",
+            taskCategory = TaskCategory.CODE,
+            taskAssignee = sampleUsers[0],
+            allUsers = sampleUsers,
+            onTitleChange = {},
+            onMinutesChange = {},
+            onCategoryChange = {},
+            onAssigneeChange = {},
+            trailingAction = {
+                IconButton(onClick = {}) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = ErrorRed)
+                }
+            },
+            onConfirm = {},
+            confirmLabel = "Forge Task"
         )
     }
 }
