@@ -2,19 +2,15 @@
 
 Updated roadmap based on current code state and proposal requirements.
 
-## ✅ Completed (Fases 1 & 3)
+## ✅ Completed (Fases 1, 2 & 3)
 - **Auth & Collaboration:** Firebase Login/Register, Deep-link invites, and `memberIds` sync.
 - **The Arcade:** Real-time itch.io scraping using Jsoup with 15-minute cache.
 - **Workspace:** Real-time task streaming, edit/delete sheets, and status updates (including `REVIEW`).
 - **Subscription:** Tiered system (2 Jams for Free, Unlimited for Premium) based on `activeJam` count.
 - **AI Core:** Roadmap generation with selectable review step.
+- **Panic Mode (M1):** AI-powered MVP trimming implemented via Terminal command sequence. [DONE]
 
 ## 🧠 Phase 2: Final Polish & "Must-Haves" (Current Focus)
-
-### 2.1 Panic Button (High Priority) 🔴
-- Add "Panic" FAB to `TeamWorkspaceScreen`.
-- Implement logic in `TeamWorkspaceViewModel` to filter tasks via AI.
-- Create a minimal MVP survival list view.
 
 ### 2.2 User Roles & Badges 🔴
 - Add `FilterChip` role picker to `RegisterScreen`.

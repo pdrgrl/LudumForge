@@ -19,7 +19,7 @@
 - **FR3.4:** Filter and search tasks in the War Room. [DONE]
 
 ### FR4: Survival Features
-- **FR4.1: Panic Button:** (Planned) Trim non-essential tasks for MVP.
+- **FR4.1: Panic Mode:** Integrated into the Offline Terminal via AI-driven command sequence (`panic` -> `confirm`). [DONE]
 - **FR4.2:** Real-time countdown timer for the active Jam. [DONE]
 - **FR4.3:** Action Log: System events tracking team activity. [DONE]
 
@@ -38,3 +38,4 @@
 - **NFR1:** AI responses must be raw JSON (Prompt Engineering).
 - **NFR2:** High-alert UI (Dynamic accents and specific fonts).
 - **NFR3:** Seamless UX for Premium (Hidden API key fields).
+- **NFR4:** Survivalist UX: Emergency features (Panic) are accessible via the low-power Terminal mode.
