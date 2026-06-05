@@ -28,13 +28,14 @@ class AuthViewModel : ViewModel() {
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     init {
-        fetchUserProfile()
-    }
-
-    fun fetchUserProfile() {
         viewModelScope.launch {
             _currentUser.value = repository.getUserProfile()
         }
+    }
+
+    private suspend fun syncUserProfile() {
+        val profile = repository.getUserProfile()
+        _currentUser.value = profile
     }
 
     fun login(email: String, password: String) {
@@ -47,7 +48,7 @@ class AuthViewModel : ViewModel() {
             _uiState.value = AuthUiState.Loading
             repository.signIn(email, password)
                 .onSuccess { 
-                    fetchUserProfile()
+                    syncUserProfile()
                     _uiState.value = AuthUiState.Success 
                 }
                 .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Login failed") }
@@ -70,7 +71,7 @@ class AuthViewModel : ViewModel() {
             _uiState.value = AuthUiState.Loading
             repository.signUp(email, password, username, role)
                 .onSuccess { 
-                    fetchUserProfile()
+                    syncUserProfile()
                     _uiState.value = AuthUiState.Success 
                 }
                 .onFailure {
@@ -84,7 +85,7 @@ class AuthViewModel : ViewModel() {
             _uiState.value = AuthUiState.Loading
             repository.signInWithGoogle(context, webClientId)
                 .onSuccess { 
-                    fetchUserProfile()
+                    syncUserProfile()
                     _uiState.value = AuthUiState.Success 
                 }
                 .onFailure { _uiState.value = AuthUiState.Error(it.localizedMessage ?: "Google sign-in failed") }
