@@ -15,7 +15,7 @@
 ### FR3: Task Management
 - **FR3.1:** Add, edit, and delete tasks. [DONE]
 - **FR3.2:** Update status (TODO, IN_PROGRESS, REVIEW, DONE). [DONE]
-- **FR3.3:** Assign tasks to team members with initials avatars. [DONE]
+- **FR3.3:** Assign tasks to team members with initials avatars and role badges. [DONE]
 - **FR3.4:** Filter and search tasks in the War Room. [DONE]
 
 ### FR4: Survival Features
@@ -28,9 +28,14 @@
 - **FR5.2: The Arcade:** Fetch itch.io jams with cover images and 15min cache. [DONE]
 - **FR5.3:** Subscription System: Free (2 jams) vs Premium (unlimited). [DONE]
 
-### FR6: Offline Mode
-- **FR6.1:** Access local Action Log without internet. [DONE]
-- **FR6.2:** (Planned) Full task/project caching via Room.
+### FR6: User Roles & Profile
+- **FR6.1:** Select user role (Programmer, Artist, Musician) during registration. [DONE]
+- **FR6.2:** Display role-specific badges in the team workspace. [DONE]
+- **FR6.3:** Store profile data (username, role, plan) in Firestore. [DONE]
+
+### FR7: Offline Mode
+- **FR7.1:** Access local Action Log without internet. [DONE]
+- **FR7.2:** (Planned) Full task/project caching via Room.
 
 ---
 

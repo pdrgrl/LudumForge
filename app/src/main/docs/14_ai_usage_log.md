@@ -9,6 +9,8 @@ Use this file to document significant help from AI agents during the development
 | 2026-05-02 | Gemini | Subscription Logic | Designed the `gate on active jam count` logic to differentiate between Free and Premium users. | high |
 | 2026-05-25 | Gemini | AI Brainstorming | Helper for Gemini prompt engineering to ensure JSON-only output from the LLM. | high |
 | 2026-06-02 | Gemini | UI Refactor | Extracted nested Composables from `MainActivity` into separate files and added `Previews`. | medium |
+| 2026-06-05 | Gemini | Panic Mode (M1) | Implemented AI-driven crisis analysis via Terminal commands (`panic`/`confirm`). | high |
+| 2026-06-05 | Gemini | User Roles (M2) | Added role picker to registration and visual badges to the team workspace. | medium |
 
 ## How to use this log
 1. **Date:** Today's date (or the date of the task).

@@ -9,12 +9,9 @@ Updated roadmap based on current code state and proposal requirements.
 - **Subscription:** Tiered system (2 Jams for Free, Unlimited for Premium) based on `activeJam` count.
 - **AI Core:** Roadmap generation with selectable review step.
 - **Panic Mode (M1):** AI-powered MVP trimming implemented via Terminal command sequence. [DONE]
+- **User Roles & Badges (M2):** Role selection in registration and badges in the workspace. [DONE]
 
 ## 🧠 Phase 2: Final Polish & "Must-Haves" (Current Focus)
-
-### 2.2 User Roles & Badges 🔴
-- Add `FilterChip` role picker to `RegisterScreen`.
-- Update user avatars in the War Room to show role badges.
 
 ### 2.3 Task Creation UI 🟡
 - Add Category selection and Minutes input to the "Add Task" sheet.

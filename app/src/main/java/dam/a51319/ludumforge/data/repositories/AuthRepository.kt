@@ -28,11 +28,11 @@ class AuthRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    suspend fun signUp(email: String, password: String): Result<FirebaseUser> {
+    suspend fun signUp(email: String, password: String, username: String, role: UserRole): Result<FirebaseUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user!!
-            saveUserToFirestore(user, username = email.substringBefore("@"))
+            saveUserToFirestore(user, username, role)
             Result.success(user)
         } catch (e: Exception) { Result.failure(e) }
     }
@@ -53,18 +53,18 @@ class AuthRepository {
             val result = auth.signInWithCredential(firebaseCredential).await()
             val user = result.user!!
             if (result.additionalUserInfo?.isNewUser == true) {
-                saveUserToFirestore(user, username = user.displayName ?: "New User")
+                saveUserToFirestore(user, username = user.displayName ?: "New User", role = UserRole.DEVELOPER)
             }
             Result.success(user)
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    private suspend fun saveUserToFirestore(user: FirebaseUser, username: String) {
+    private suspend fun saveUserToFirestore(user: FirebaseUser, username: String, role: UserRole) {
         val userMap = hashMapOf(
             "id" to user.uid,
             "email" to (user.email ?: ""),
             "username" to username,
-            "role" to "DEVELOPER",
+            "role" to role.name,
             "plan" to "FREE"
         )
         db.collection("users").document(user.uid).set(userMap).await()

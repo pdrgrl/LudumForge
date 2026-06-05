@@ -56,15 +56,15 @@ class AuthViewModel : ViewModel() {
         _uiState.value = AuthUiState.Idle
     }
 
-    fun register(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
+    fun register(email: String, password: String, username: String, role: UserRole) {
+        if (email.isBlank() || password.isBlank() || username.isBlank()) {
             _uiState.value = AuthUiState.Error("Fields cannot be empty")
             return
         }
 
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
-            repository.signUp(email, password)
+            repository.signUp(email, password, username, role)
                 .onSuccess { _uiState.value = AuthUiState.Success }
                 .onFailure {
                     _uiState.value = AuthUiState.Error(it.message ?: "Registration failed")

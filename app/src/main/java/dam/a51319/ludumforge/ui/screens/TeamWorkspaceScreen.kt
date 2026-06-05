@@ -585,6 +585,9 @@ fun ColumnHeader(title: String, count: Int) {
 }
 
 // ── Task Card ─────────────────────────────────────────────────────────────────
+import androidx.compose.material.icons.automirrored.filled.Label
+import dam.a51319.ludumforge.models.UserRole
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskCard(
@@ -668,13 +671,31 @@ fun TaskCard(
                             val initials = user.username.split(" ", "_", ".").take(2)
                                 .joinToString("") { it.first().uppercaseChar().toString() }
                                 .ifBlank { user.username.take(2).uppercase() }
+                            
+                            val roleColor = when(user.role) {
+                                UserRole.DEVELOPER -> Color(0xFF4A90D9)
+                                UserRole.ARTIST -> Color(0xFF9B59B6)
+                                UserRole.AUDIO_ENGINEER -> Color(0xFFE67E22)
+                                else -> SecondaryGray
+                            }
+
                             Box(
-                                modifier = Modifier.size(30.dp).clip(CircleShape)
-                                    .background(SurfaceContainerHigh)
-                                    .border(2.dp, SurfaceContainerLowest, CircleShape),
-                                contentAlignment = Alignment.Center
+                                modifier = Modifier.size(30.dp),
+                                contentAlignment = Alignment.BottomEnd
                             ) {
-                                Text(initials, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                                Box(
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape)
+                                        .background(SurfaceContainerHigh)
+                                        .border(2.dp, SurfaceContainerLowest, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(initials, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryBlack)
+                                }
+                                // Role Badge
+                                Box(
+                                    modifier = Modifier.size(10.dp).clip(CircleShape)
+                                        .background(roleColor).border(1.dp, Color.White, CircleShape)
+                                )
                             }
                         }
                     }

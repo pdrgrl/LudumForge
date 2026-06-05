@@ -19,6 +19,8 @@ import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.AuthUiState
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
 
+import dam.a51319.ludumforge.models.UserRole
+
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
@@ -33,20 +35,22 @@ fun RegisterScreen(
 
     RegisterContent(
         uiState = uiState,
-        onRegister = { email, password -> viewModel.register(email, password) },
+        onRegister = { email, password, username, role -> viewModel.register(email, password, username, role) },
         onNavigateToLogin = onNavigateToLogin
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterContent(
     uiState: AuthUiState,
-    onRegister: (String, String) -> Unit,
+    onRegister: (String, String, String, UserRole) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf(UserRole.DEVELOPER) }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF0F0F0F)).padding(24.dp),
@@ -56,7 +60,7 @@ fun RegisterContent(
         Text("NEW JAMMER", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 2.sp)
         Text("Create Account", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
 
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(32.dp))
 
         AuthInput(value = username, onValueChange = { username = it }, label = "JAMMER USERNAME")
         Spacer(Modifier.height(16.dp))
@@ -64,14 +68,43 @@ fun RegisterContent(
         Spacer(Modifier.height(16.dp))
         AuthInput(value = password, onValueChange = { password = it }, label = "PASSWORD", isPassword = true)
 
+        Spacer(Modifier.height(24.dp))
+        Text("SELECT YOUR ROLE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, modifier = Modifier.align(Alignment.Start))
+        Spacer(Modifier.height(12.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val roles = listOf(UserRole.DEVELOPER, UserRole.ARTIST, UserRole.AUDIO_ENGINEER)
+            roles.forEach { role ->
+                FilterChip(
+                    selected = selectedRole == role,
+                    onClick = { selectedRole = role },
+                    label = { Text(role.name.replace("_", " "), fontSize = 10.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color.Transparent,
+                        selectedContainerColor = MoltenOrange,
+                        labelColor = Color.Gray,
+                        selectedLabelColor = Color.White
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        borderColor = Color.Gray.copy(alpha = 0.3f),
+                        selectedBorderColor = Color.Transparent,
+                        borderWidth = 1.dp
+                    )
+                )
+            }
+        }
+
         if (uiState is AuthUiState.Error) {
             Text(uiState.message, color = Color(0xFFBA1A1A), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
         }
 
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(32.dp))
 
         Button(
-            onClick = { onRegister(email, password) },
+            onClick = { onRegister(email, password, username, selectedRole) },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
