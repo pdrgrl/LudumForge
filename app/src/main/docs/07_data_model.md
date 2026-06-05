@@ -1,19 +1,23 @@
 # 07. Data Model: LudumForge
 
-Initial data structure for LudumForge, designed for both Room (Local) and Firestore (Remote).
+Current data structure as implemented in the Kotlin models, supporting both Room (Local) and Firestore (Remote).
 
 ## 📊 Core Entities
 
 ### 1. Project (Jam)
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| id | String | Unique Identifier (UUID / Firestore ID) |
+| id | String | Unique Identifier (Firestore ID) |
 | name | String | Project Title |
 | theme | String | Jam Theme |
-| startDate | Long | Timestamp (ms) |
-| endDate | Long | Timestamp (ms) |
+| startDate | Date | Java Date object |
+| endDate | Date | Java Date object |
 | teamSize | Int | Number of members |
-| status | Enum | PLANNING, ACTIVE, COMPLETED |
+| status | Enum | PLANNING, ACTIVE, SUBMITTED, COMPLETED, CANCELLED |
+| creatorId | String | UID of the creator |
+| memberIds | List<String> | Collaborators who joined via invite |
+| coverImageUrl| String? | URL from itch.io feed (optional) |
+| jamUrl | String? | External link to itch.io page |
 
 ### 2. Task
 | Field | Type | Description |
@@ -21,32 +25,22 @@ Initial data structure for LudumForge, designed for both Room (Local) and Firest
 | id | String | Unique Identifier |
 | projectId | String | Foreign Key to Project |
 | title | String | Task Name |
-| category | Enum | CODE, ART, AUDIO, DESIGN |
+| category | Enum | ART, CODE, AUDIO, DESIGN, QA, OTHER |
 | assignedTo | String | User ID (nullable) |
 | estimatedMin | Int | Time estimate in minutes |
-| priority | Int | 1 (Low) to 3 (Essential) |
-| status | Enum | PENDING, IN_PROGRESS, DONE |
+| status | Enum | TODO, IN_PROGRESS, REVIEW, DONE |
 
 ### 3. User
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| id | String | Unique Identifier (Firebase UID) |
+| id | String | Firebase UID |
 | username | String | Display Name |
 | email | String | User Email |
 | role | Enum | PROGRAMMER, ARTIST, MUSICIAN, GENERALIST |
 | subscription | Enum | FREE, PREMIUM |
 
-### 4. Team
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| id | String | Unique Identifier |
-| projectId | String | Linked Project |
-| membersList | List<String>| List of User IDs |
-
 ---
 
-## 🔗 Relationships
-- **Project 1 : N Task:** A project contains multiple tasks.
-- **Project 1 : 1 Team:** Each project is assigned to one team (which can be a solo team).
-- **User N : M Team:** A user can be part of multiple teams/projects over time.
-- **User 1 : N Task:** A user can be assigned multiple tasks within a project.
+## 🔗 Implementation Notes
+- **Naming Convention:** The code uses `Project` as the model name but refers to them as `Jams` in the UI and SessionManager.
+- **Room Integration:** While `Project` and `Task` are annotated as `@Entity`, they are currently primarily managed via `TaskRepository` (Firestore). ActionLog is the only entity fully wired into `LudumForgeDatabase`.
