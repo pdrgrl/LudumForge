@@ -128,7 +128,8 @@ fun PersonalDashboardContent(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         StatCard(modifier = Modifier.weight(1f), value = timeDisplay, label = "Time\nRemaining")
                         StatCard(modifier = Modifier.weight(1f), value = "${priorityTasks.size}", label = "Tasks\nDue")
-                        StatCard(modifier = Modifier.weight(1f), value = "84%", label = "Avg.\nVelocity")
+                        val progress = if (activeJamId != null) completionRatios[activeJamId] ?: 0f else 0f
+                        StatCard(modifier = Modifier.weight(1f), value = "${(progress * 100).toInt()}%", label = "Jam\nProgress")
                     }
                     Spacer(modifier = Modifier.height(40.dp))
                     Text("ACTIVE JAMS", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
@@ -162,7 +163,7 @@ fun PersonalDashboardContent(
 
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Text("YOUR PRIORITY TASKS", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
+                    Text("YOUR TASKS", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }

@@ -203,8 +203,13 @@ class PersonalDashboardViewModel : ViewModel() {
     private fun loadMyTasks() {
         val uid = currentUserId ?: return
         viewModelScope.launch {
-            taskRepository.getTasksForUser(uid).collect { allMyTasks ->
-                _myTasks.value = allMyTasks.filter { it.status != TaskStatus.DONE }
+            combine(
+                taskRepository.getTasksForUser(uid),
+                SessionManager.activeJamId
+            ) { tasks, activeId ->
+                tasks.filter { it.projectId == activeId && it.status != TaskStatus.DONE }
+            }.collect { filteredTasks ->
+                _myTasks.value = filteredTasks
             }
         }
     }
