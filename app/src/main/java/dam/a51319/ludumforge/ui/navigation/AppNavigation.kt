@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 import dam.a51319.ludumforge.ui.components.LudumForgeTopAppBar
 import dam.a51319.ludumforge.ui.screens.*
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
@@ -51,7 +53,7 @@ fun AppNavigation(
     
     // Determine start destination ONCE to keep the graph stable during the session
     val startDest = remember {
-        if (FirebaseAuth.getInstance().currentUser != null) Routes.PERSONAL_DASHBOARD 
+        if (FirebaseAuth.getInstance().currentUser != null) Routes.PERSONAL_DASHBOARD
         else Routes.LOGIN
     }
 
