@@ -17,7 +17,11 @@ class TaskRepository {
         val listener = db.collection("tasks")
             .whereEqualTo("projectId", projectId)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) { 
+                    // Session might have ended, just return empty list or ignore
+                    trySend(emptyList())
+                    return@addSnapshotListener 
+                }
                 if (snapshot != null) {
                     val tasks = snapshot.documents.map { doc ->
                         Task(
@@ -84,7 +88,11 @@ class TaskRepository {
         val listener = db.collection("tasks")
             .whereEqualTo("assignedTo", userId)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) { 
+                    // Session might have ended, just return empty list or ignore
+                    trySend(emptyList())
+                    return@addSnapshotListener 
+                }
                 if (snapshot != null) {
                     val tasks = snapshot.documents.map { doc ->
                         Task(

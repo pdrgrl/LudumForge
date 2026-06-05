@@ -87,8 +87,9 @@ fun AppNavigation(
                     currentUser = currentUser,
                     onLogout = {
                         authViewModel.logout()
+                        dashboardViewModel.clearData()
                         navController.navigate(Routes.LOGIN) {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            popUpTo(0)
                         }
                     },
                     onNavigateToSubscription = {
@@ -136,8 +137,9 @@ fun AppNavigation(
                     authViewModel = authViewModel,
                     onLogout = {
                         authViewModel.logout()
+                        dashboardViewModel.clearData()
                         navController.navigate(Routes.LOGIN) {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            popUpTo(0)
                         }
                     },
                     onNavigateToSubscription = {

@@ -57,6 +57,8 @@ class AuthViewModel : ViewModel() {
 
     fun logout() {
         repository.signOut()
+        dam.a51319.ludumforge.data.SessionManager.clearActiveJam()
+        dam.a51319.ludumforge.data.SessionManager.clearRoadmapSeed()
         _currentUser.value = null // Clear session
         _uiState.value = AuthUiState.Idle
     }

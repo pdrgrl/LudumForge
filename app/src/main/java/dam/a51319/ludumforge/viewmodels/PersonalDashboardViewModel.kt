@@ -21,6 +21,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import java.util.Calendar
 import java.util.Date
 
@@ -103,6 +106,13 @@ class PersonalDashboardViewModel : ViewModel() {
         loadMyJams()
         loadAllTasksForJams()
         refreshSubscriptionState()
+    }
+
+    fun clearData() {
+        _myTasks.value = emptyList()
+        _myJams.value = emptyList()
+        _completionRatios.value = emptyMap()
+        _jamsThisMonth.value = 0
     }
 
     fun refreshSubscriptionState() {
@@ -250,10 +260,6 @@ class PersonalDashboardViewModel : ViewModel() {
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
-
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 
     private fun loadAllTasksForJams() {
         viewModelScope.launch {

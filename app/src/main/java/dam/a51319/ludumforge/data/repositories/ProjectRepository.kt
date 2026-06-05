@@ -44,7 +44,8 @@ class ProjectRepository {
         val ownerListener = db.collection("projects")
             .whereEqualTo("creatorId", userId)
             .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
+                if (error != null) return@addSnapshotListener
+                if (snapshot == null) return@addSnapshotListener
                 parse(snapshot.documents).forEach { combined[it.id] = it }
                 trySend(combined.values.toList().sortedByDescending { it.startDate })
             }
@@ -53,7 +54,8 @@ class ProjectRepository {
         val memberListener = db.collection("projects")
             .whereArrayContains("memberIds", userId)
             .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
+                if (error != null) return@addSnapshotListener
+                if (snapshot == null) return@addSnapshotListener
                 parse(snapshot.documents).forEach { combined[it.id] = it }
                 trySend(combined.values.toList().sortedByDescending { it.startDate })
             }
