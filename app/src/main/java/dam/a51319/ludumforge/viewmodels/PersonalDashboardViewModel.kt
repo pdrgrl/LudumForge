@@ -94,10 +94,14 @@ class PersonalDashboardViewModel : ViewModel() {
     val completionRatios: StateFlow<Map<String, Float>> = _completionRatios.asStateFlow()
 
     init {
+        observeActiveJamTimer()
+    }
+
+    fun loadAllData() {
+        val uid = currentUserId ?: return
         loadMyTasks()
         loadMyJams()
         loadAllTasksForJams()
-        observeActiveJamTimer()
         refreshSubscriptionState()
     }
 

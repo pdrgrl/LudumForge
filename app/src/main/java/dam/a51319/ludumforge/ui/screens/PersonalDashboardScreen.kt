@@ -47,6 +47,14 @@ fun PersonalDashboardScreen(
     val activeJamId by SessionManager.activeJamId.collectAsState()
     val myJams by viewModel.myJams.collectAsState()
     val completionRatios by viewModel.completionRatios.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+    // ── Load data when user session is active ────────────────────────────────
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            viewModel.loadAllData()
+        }
+    }
 
     // ── Jam limit snackbar ───────────────────────────────────────────────────
     val snackbarHostState = remember { SnackbarHostState() }
