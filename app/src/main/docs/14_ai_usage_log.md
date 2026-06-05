@@ -14,6 +14,7 @@ Use this file to document significant help from AI agents during the development
 | 2026-06-05 | Gemini | Task UI (M3) | Finalized the "Add Task" form with category selection and time estimates. | low |
 | 2026-06-05 | Gemini | Stability & Lifecycle | Fixed navigation crashes, Firestore memory leaks, and implemented "Clean Slate" logout. | high |
 | 2026-06-05 | Gemini | UI/Timer Polish | Implemented dynamic timer formatting (Xd Yh) and real-time Jam deletion sync. | medium |
+| 2026-06-05 | Gemini | Final Polish | Refined Dashboard stats (factual data) and Workspace usability (scrollable rows, guaranteed 'Me' in assignees). | medium |
 
 ## How to use this log
 1. **Date:** Today's date (or the date of the task).

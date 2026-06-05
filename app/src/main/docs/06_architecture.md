@@ -5,20 +5,19 @@ The project follows **Clean Architecture** principles and **MVVM** (Model-View-V
 ## 🏛️ Layers
 
 ### 1. UI Layer (Compose)
-- **Composables:** Stateless UI components extracted into separate files.
-- **ViewModels:** Managing screen state using `StateFlow`. Uses `flatMapLatest` and `combine` operators to manage reactive data streams efficiently.
-- **Navigation:** Single NavHost with stable roots to prevent Activity reconstruction during session changes.
+- **Composables:** Stateless components with hoisted state.
+- **ViewModels:** Managing reactive state. Uses `flatMapLatest` and `combine` for leak-free Firestore streams.
+- **Unified Auth:** App-wide shared `AuthViewModel` ensures consistent session state across all screens.
 
 ### 2. Domain Layer
 - **Models:** Kotlin data classes (`Task`, `Project`, `User`).
-- **Logic:** Business rules for roadmap parsing and task filtering.
+- **Reactive Logic:** Business rules for calculating jam progress and filtering tasks are handled within the ViewModels using reactive operators.
 
 ### 3. Data Layer
-- **Repositories:** Abstracting Firestore and Room.
-- **Reactive Streams:** Uses `callbackFlow` for real-time Firestore listeners. 
-- **Memory Safety:** Listeners are automatically disposed of using `flatMapLatest` when keys (like `activeJamId` or `userId`) change, preventing memory leaks and resource exhaustion.
-- **Error Handling:** Graceful handling of "Permission Denied" errors during logout to prevent app crashes.
+- **Repositories:** Abstracting Firestore (Remote) and Room (Local).
+- **Real-time Sync:** `callbackFlow` provides immediate UI updates for task deletions, status changes, and project renames.
+- **Self-Healing Listeners:** Internal tracking maps are cleared on each snapshot to ensure local state perfectly matches remote truth (fixing the persistence bug on deletions).
 
-## 🔄 Current Implementation Status
-- **Reactivity:** Fully reactive UI that responds to Firestore changes in real-time.
-- **Offline First:** Room handles `ActionLog`. Projects and Tasks are streamed from Firestore with local state clearing on logout.
+## 🔄 Stability & Lifecycle
+- **Safe Logout:** Navigation triggers before session revocation to prevent permission crashes.
+- **State Clearing:** `clearData()` wipes in-memory caches on logout to ensure a clean slate for subsequent users.

@@ -6,35 +6,30 @@ Status of screen implementation as of June 2026.
 
 | Screen (Proposal Name) | Code Name | Implementation State |
 | :--- | :--- | :--- |
-| **Dashboard Pessoal** | `PersonalDashboardScreen` | ✅ Complete |
-| **The War Room** | `TeamWorkspaceScreen` | ✅ Complete (Role Badges & Full Task Form) |
+| **Dashboard Pessoal** | `PersonalDashboardScreen` | ✅ Complete (Factual Real-time Stats) |
+| **The War Room** | `TeamWorkspaceScreen` | ✅ Complete (Improved Usability) |
 | **The Architect (IA)** | `RoadmapGeneratorScreen` | ✅ Complete (Gemini 2.5) |
 | **Modo Terminal** | `OfflineTerminalScreen` | ✅ Complete (Panic Mode integrated) |
 | **The Arcade (Public)** | `PublicJamsScreen` | ✅ Complete (Itch.io Live) |
 | **Subscription** | `SubscriptionScreen` | ✅ Complete (Free/Premium logic) |
-| **Auth** | `LoginScreen` / `RegisterScreen`| ✅ Complete (Role Picker added) |
+| **Auth** | `LoginScreen` / `RegisterScreen`| ✅ Complete (Unified Auth State) |
 
-## 🎨 UI Details & Accents
-- **Theme:** Material 3 with Dynamic Theming (Dark Mode prioritized).
-- **Fonts:** `Outfit` (Main), `Share Tech Mono` (Terminal/Timer).
-- **Navigation:** Scaffold with Bottom Navigation Bar.
+## 🎨 Personal Dashboard (Polished)
+The dashboard now serves as a live mission-control center:
+- **Dynamic Overview:** Stats cards reflect the currently selected jam in real-time.
+    - **Time Remaining:** Countdown using smart formatting (`Xd Yh` for >24h, `Xh Ym` otherwise).
+    - **Tasks Due:** Count of tasks assigned to you in the active jam (excluding DONE).
+    - **Jam Progress:** Real-time percentage calculation of total vs. completed tasks.
+- **"Your Tasks" Feed:** A reactive list that only shows your pending tasks for the currently active jam, updating automatically when you switch jams.
 
-## 🛠️ User Roles & Collaboration
-- **Registration:** Users choose their specialty (Developer, Artist, Audio Engineer) via `FilterChips`.
-- **Badges:** Avatars in the War Room display a small color-coded dot/badge representing their role:
-    - **Developer:** Blue
-    - **Artist:** Purple
-    - **Audio Engineer:** Orange
+## 🛠️ Studio Workspace (Refined)
+Improvements to the collaborative environment:
+- **Scrollable Selectors:** Horizontal scrolling added to **Category** and **Assignee** rows in task forms to handle large teams and various categories without UI clipping.
+- **Robust Assignments:** The current user is guaranteed to appear in the "Assign To" list, ensuring solo-jammers or new teams can always assign tasks to themselves.
+- **Role Badges:** User avatars display specialty badges (Developer, Artist, etc.) directly on task cards.
 
 ## 🚨 Panic Mode (The Command Flow)
 Implemented as a specialized terminal experience in `OfflineTerminalScreen`:
 1.  **Trigger:** Typing `panic` in the command line.
-2.  **Analysis:** System logs update in real-time as Gemini identifies non-essential tasks.
-3.  **Confirmation:** Typing `confirm` triggers a batch deletion of suggested tasks.
-
-## ✅ Task Creation (M3)
-- The manual "Add Task" sheet in the War Room is fully implemented with:
-    - **Task Title** input.
-    - **Estimated Minutes** (numeric keyboard).
-    - **Category Selection** (FilterChips).
-    - **Assignee Picker** (Initial-based avatars).
+2.  **Analysis:** Real-time AI analysis identifies non-essential tasks.
+3.  **Confirmation:** Typing `confirm` triggers batch deletion.
