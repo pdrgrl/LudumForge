@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 import org.json.JSONObject
+import kotlin.time.Duration.Companion.milliseconds
 
 sealed class PanicTerminalState {
     object Idle : PanicTerminalState()
@@ -173,7 +174,7 @@ class OfflineTerminalViewModel : ViewModel() {
     private fun startSessionTimer() {
         viewModelScope.launch {
             while (true) {
-                delay(1000L)
+                delay(1000L.milliseconds)
                 _sessionTimerSeconds.value += 1
             }
         }
