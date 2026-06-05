@@ -5,21 +5,20 @@ The project follows **Clean Architecture** principles and **MVVM** (Model-View-V
 ## 🏛️ Layers
 
 ### 1. UI Layer (Compose)
-- **Composables:** Stateless UI components extracted into separate files for maintainability.
-- **ViewModels:** Managing screen state using `StateFlow`. Uses `flatMapLatest` on `activeJamId` for real-time reactivity.
-- **Theme:** Material 3 with dynamic theming and custom fonts (`Outfit`, `Share Tech Mono`).
+- **Composables:** Stateless UI components extracted into separate files.
+- **ViewModels:** Managing screen state using `StateFlow`. Uses `flatMapLatest` and `combine` operators to manage reactive data streams efficiently.
+- **Navigation:** Single NavHost with stable roots to prevent Activity reconstruction during session changes.
 
 ### 2. Domain Layer
-- **Models:** Kotlin data classes used across the app (`Task`, `Project`, `User`).
-- **Logic:** Business rules for roadmap parsing and task filtering (to be fully extracted into UseCases).
+- **Models:** Kotlin data classes (`Task`, `Project`, `User`).
+- **Logic:** Business rules for roadmap parsing and task filtering.
 
 ### 3. Data Layer
-- **Repositories:** Abstracting Firebase and Room.
-- **Remote Source:** Firestore is the primary source of truth for `Tasks` and `Projects`.
-- **Local Source:** Room (`LudumForgeDatabase`) currently handles `ActionLog` for system events. Caching for Tasks and Projects is defined but pending full repository wiring.
-- **Session Management:** `SessionManager` tracks the `activeJamId` globally across the app.
+- **Repositories:** Abstracting Firestore and Room.
+- **Reactive Streams:** Uses `callbackFlow` for real-time Firestore listeners. 
+- **Memory Safety:** Listeners are automatically disposed of using `flatMapLatest` when keys (like `activeJamId` or `userId`) change, preventing memory leaks and resource exhaustion.
+- **Error Handling:** Graceful handling of "Permission Denied" errors during logout to prevent app crashes.
 
 ## 🔄 Current Implementation Status
-- **Reactivity:** Using `callbackFlow` in repositories to stream Firestore snapshots directly to the UI.
-- **AI Integration:** `RoadmapGeneratorViewModel` interfaces with `gemini-2.5-flash-lite` using the `GenerativeAI` SDK.
-- **Offline First:** Currently "Online First". Room is used for logging, with a roadmap to extend it as a full offline cache for tasks.
+- **Reactivity:** Fully reactive UI that responds to Firestore changes in real-time.
+- **Offline First:** Room handles `ActionLog`. Projects and Tasks are streamed from Firestore with local state clearing on logout.

@@ -5,25 +5,19 @@ LudumForge uses **Unidirectional Data Flow (UDF)** to manage UI state consistent
 ## 🏗️ State Patterns
 
 ### 1. UI State (Sealed Classes)
-Every screen has a corresponding `State` sealed class to handle different lifecycle phases:
-```kotlin
-sealed class ScreenState<out T> {
-    object Idle : ScreenState<Nothing>()
-    object Loading : ScreenState<Nothing>()
-    data class Success<T>(val data: T) : ScreenState<T>()
-    data class Error(val message: String) : ScreenState<Nothing>()
-}
-```
+Every screen uses specific state holders to manage Loading, Success, and Error phases.
 
 ### 2. StateFlow & SharedFlow
-- **StateFlow:** Used for persistent UI state (e.g., the current task list). Collected by Composables as `collectAsStateWithLifecycle()`.
-- **SharedFlow:** Used for one-time events (e.g., showing a Snackbar when the "Panic Button" is pressed, navigating after AI generation).
+- **StateFlow:** Used for persistent UI state (Jams, Tasks, Ratios).
+- **SharedFlow:** Used for one-time events (Jam limit warnings, navigation commands).
 
-## 🔄 Synchronization State
-Since the app works **Offline-First**, we track sync status:
-- **Local:** Immediate update in Room.
-- **Syncing:** Showing a small cloud icon indicating data is being pushed to Firestore.
-- **Synced:** Data confirmed in the cloud.
+## 🔄 Synchronization & Cleanup
 
-## 🚨 Emergency State (The Panic Mode)
-When the "Panic Button" is triggered, a global flag is set in the `ProjectViewModel`. This updates the UI theme to high-alert (Red accents) and triggers the task-trimming logic across all active state collectors.
+### 🧪 "Clean Slate" Logout Flow
+To prevent crashes and state leakage between users, the logout process follows a strict sequence:
+1.  **Navigate:** Move the UI to the Login screen first.
+2.  **Clear Local State:** Call `viewModel.clearData()` to wipe in-memory lists (tasks, jams).
+3.  **Revoke Access:** Call `FirebaseAuth.signOut()`.
+
+### 🚨 Memory Management
+The app prevents listener accumulation by using the `flatMapLatest` operator. This ensures that only one set of Firestore listeners is active at any time for the current user/jam.

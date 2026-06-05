@@ -1,16 +1,16 @@
 # 12. Implementation Plan: LudumForge
 
-Updated roadmap based on current code state and proposal requirements.
+Updated roadmap based on current code state and stability improvements.
 
 ## ✅ Completed (Fases 1, 2 & 3)
 - **Auth & Collaboration:** Firebase Login/Register, Deep-link invites, and `memberIds` sync.
 - **The Arcade:** Real-time itch.io scraping using Jsoup with 15-minute cache.
-- **Workspace:** Real-time task streaming, edit/delete sheets, and status updates (including `REVIEW`).
-- **Subscription:** Tiered system (2 Jams for Free, Unlimited for Premium) based on `activeJam` count.
-- **AI Core:** Roadmap generation with selectable review step.
-- **Panic Mode (M1):** AI-powered MVP trimming implemented via Terminal command sequence. [DONE]
-- **User Roles & Badges (M2):** Role selection in registration and badges in the workspace. [DONE]
-- **Task Creation UI (M3):** Category selection and Minutes input integrated into the "Add Task" sheet. [DONE]
+- **Workspace:** Real-time task streaming, edit/delete sheets, and status updates.
+- **Subscription:** Tiered system based on `activeJam` count.
+- **AI Core:** Roadmap generation and Panic Mode (M1).
+- **User Roles (M2) & Task UI (M3):** Fully integrated into registration and workspace.
+- **Stability Polish:** Fixed memory leaks (Firestore listeners) and Logout crashes. [DONE]
+- **Timer Polish:** Dynamic formatting (Days/Hours/Minutes) for better readability. [DONE]
 
 ## 🧠 Phase 2: Final Polish & Survival (Current Focus)
 
