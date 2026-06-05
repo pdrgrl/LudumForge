@@ -48,7 +48,12 @@ fun AppNavigation(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentUser by authViewModel.currentUser.collectAsState()
-    val startDest = if (currentUser != null) Routes.PERSONAL_DASHBOARD else Routes.LOGIN
+    
+    // Determine start destination ONCE to keep the graph stable during the session
+    val startDest = remember {
+        if (FirebaseAuth.getInstance().currentUser != null) Routes.PERSONAL_DASHBOARD 
+        else Routes.LOGIN
+    }
 
     // Single hoisted VM shared by Dashboard, SubscriptionScreen, and TeamWorkspaceScreen
     val dashboardViewModel: PersonalDashboardViewModel = viewModel()
