@@ -42,6 +42,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.ExperimentalFoundationApi
 import kotlinx.coroutines.launch
 
+// ── Task Card ─────────────────────────────────────────────────────────────────
+import androidx.compose.material.icons.automirrored.filled.Label
+import dam.a51319.ludumforge.models.UserRole
+
 // ─── Category colour map ────────────────────────────────────────────────────
 private fun categoryColor(category: TaskCategory): Color = when (category) {
     TaskCategory.CODE   -> Color(0xFF4A90D9)
@@ -583,10 +587,6 @@ fun ColumnHeader(title: String, count: Int) {
         }
     }
 }
-
-// ── Task Card ─────────────────────────────────────────────────────────────────
-import androidx.compose.material.icons.automirrored.filled.Label
-import dam.a51319.ludumforge.models.UserRole
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
