@@ -495,7 +495,7 @@ private fun TaskFormSheet(
         Text("Category", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TaskCategory.values().forEach { category ->
+            TaskCategory.entries.forEach { category ->
                 FilterChip(
                     selected = category == taskCategory,
                     onClick = { onCategoryChange(category) },
