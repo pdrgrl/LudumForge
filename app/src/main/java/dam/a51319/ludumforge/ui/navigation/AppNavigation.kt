@@ -98,6 +98,7 @@ fun AppNavigation(
         ) {
             composable(Routes.LOGIN) {
                 LoginScreen(
+                    viewModel = authViewModel,
                     onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
                     onLoginSuccess = {
                         navController.navigate(Routes.PERSONAL_DASHBOARD) {
@@ -108,6 +109,7 @@ fun AppNavigation(
             }
             composable(Routes.REGISTER) {
                 RegisterScreen(
+                    viewModel = authViewModel,
                     onNavigateToLogin = { navController.popBackStack() },
                     onRegisterSuccess = {
                         navController.navigate(Routes.PERSONAL_DASHBOARD) {
