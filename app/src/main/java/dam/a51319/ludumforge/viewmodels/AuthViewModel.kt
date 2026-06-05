@@ -46,7 +46,10 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             repository.signIn(email, password)
-                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onSuccess { 
+                    fetchUserProfile()
+                    _uiState.value = AuthUiState.Success 
+                }
                 .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Login failed") }
         }
     }
@@ -66,7 +69,10 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             repository.signUp(email, password, username, role)
-                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onSuccess { 
+                    fetchUserProfile()
+                    _uiState.value = AuthUiState.Success 
+                }
                 .onFailure {
                     _uiState.value = AuthUiState.Error(it.message ?: "Registration failed")
                 }
@@ -77,7 +83,10 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             repository.signInWithGoogle(context, webClientId)
-                .onSuccess { _uiState.value = AuthUiState.Success }
+                .onSuccess { 
+                    fetchUserProfile()
+                    _uiState.value = AuthUiState.Success 
+                }
                 .onFailure { _uiState.value = AuthUiState.Error(it.localizedMessage ?: "Google sign-in failed") }
         }
     }
