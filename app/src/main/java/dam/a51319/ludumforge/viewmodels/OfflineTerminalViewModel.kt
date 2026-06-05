@@ -123,7 +123,7 @@ class OfflineTerminalViewModel : ViewModel() {
                 return
             }
 
-            val generativeModel = GenerativeModel(modelName = "gemini-1.5-flash", apiKey = apiKey)
+            val generativeModel = GenerativeModel(modelName = "gemini-3.1-flash-lite", apiKey = apiKey)
             val tasksJson = pendingTasks.joinToString("\n") { "- [${it.id}] ${it.title} (${it.category})" }
             
             val prompt = """
