@@ -39,7 +39,16 @@ class TeamWorkspaceViewModel : ViewModel() {
 
     private fun loadTeamMembers() {
         viewModelScope.launch {
-            _teamMembers.value = authRepository.getAllUsers()
+            val all = authRepository.getAllUsers()
+            val me = authRepository.getUserProfile()
+            
+            // Ensure at least the current user is in the list
+            val combined = if (me != null && all.none { it.id == me.id }) {
+                (listOf(me) + all).distinctBy { it.id }
+            } else {
+                all
+            }
+            _teamMembers.value = combined
         }
     }
 
