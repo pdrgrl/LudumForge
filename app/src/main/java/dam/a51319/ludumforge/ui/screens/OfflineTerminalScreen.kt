@@ -33,9 +33,11 @@ import dam.a51319.ludumforge.viewmodels.OfflineTerminalViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.content.Context
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import dam.a51319.ludumforge.data.ActionLog
+import dam.a51319.ludumforge.viewmodels.PanicTerminalState
 
 data class OfflineLogEntry(val timestamp: Date, val type: String, val description: String, val isError: Boolean = false)
 
@@ -55,15 +57,22 @@ fun OfflineTerminalScreen(viewModel: OfflineTerminalViewModel = viewModel()) {
     // Collect the REAL logs from Room!
     val terminalLogs by viewModel.logs.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
+    val panicState by viewModel.panicState.collectAsState()
+
+    // Get API Key and Premium Status from SharedPreferences
+    val sharedPrefs = remember { context.getSharedPreferences("LudumForgePrefs", Context.MODE_PRIVATE) }
+    val userApiKey = sharedPrefs.getString("gemini_api_key", "") ?: ""
+    val isPremium = sharedPrefs.getBoolean("is_premium", false)
 
     OfflineTerminalContent(
         commandInput = commandInput,
         sessionTimerSeconds = sessionTimerSeconds,
         terminalLogs = terminalLogs,
         isSyncing = isSyncing,
+        isAnalyzing = panicState is PanicTerminalState.Analyzing,
         onCommandInputChange = { viewModel.noteText.value = it },
         onManualSync = { viewModel.manualSync() },
-        onSubmitNote = { viewModel.submitNote() }
+        onSubmitNote = { viewModel.submitNote(userApiKey, isPremium) }
     )
 }
 
@@ -74,6 +83,7 @@ fun OfflineTerminalContent(
     sessionTimerSeconds: Long,
     terminalLogs: List<ActionLog>,
     isSyncing: Boolean,
+    isAnalyzing: Boolean = false,
     onCommandInputChange: (String) -> Unit,
     onManualSync: () -> Unit,
     onSubmitNote: () -> Unit
