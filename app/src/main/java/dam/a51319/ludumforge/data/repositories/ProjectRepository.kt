@@ -20,12 +20,17 @@ class ProjectRepository {
      * support OR queries across different fields.
      */
     fun getMyJams(userId: String): Flow<List<Project>> = callbackFlow {
-        val combined = mutableMapOf<String, Project>()
+        val ownerJams = mutableMapOf<String, Project>()
+        val memberJams = mutableMapOf<String, Project>()
+
+        fun sendMerged() {
+            val merged = (ownerJams + memberJams).values.toList().sortedByDescending { it.startDate }
+            trySend(merged)
+        }
 
         fun parse(documents: List<com.google.firebase.firestore.DocumentSnapshot>): List<Project> =
             documents.mapNotNull { doc ->
                 try {
-                    @Suppress("UNCHECKED_CAST")
                     Project(
                         id = doc.id,
                         name = doc.getString("name") ?: "Untitled Jam",
@@ -45,9 +50,11 @@ class ProjectRepository {
             .whereEqualTo("creatorId", userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
-                if (snapshot == null) return@addSnapshotListener
-                parse(snapshot.documents).forEach { combined[it.id] = it }
-                trySend(combined.values.toList().sortedByDescending { it.startDate })
+                if (snapshot != null) {
+                    ownerJams.clear() // CRITICAL: Clear to handle deletions
+                    parse(snapshot.documents).forEach { ownerJams[it.id] = it }
+                    sendMerged()
+                }
             }
 
         // Listener 2 — jams where this user is in memberIds
@@ -55,9 +62,11 @@ class ProjectRepository {
             .whereArrayContains("memberIds", userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
-                if (snapshot == null) return@addSnapshotListener
-                parse(snapshot.documents).forEach { combined[it.id] = it }
-                trySend(combined.values.toList().sortedByDescending { it.startDate })
+                if (snapshot != null) {
+                    memberJams.clear() // CRITICAL: Clear to handle deletions
+                    parse(snapshot.documents).forEach { memberJams[it.id] = it }
+                    sendMerged()
+                }
             }
 
         awaitClose {

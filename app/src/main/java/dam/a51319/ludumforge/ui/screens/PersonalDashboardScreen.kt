@@ -101,9 +101,14 @@ fun PersonalDashboardContent(
     onUpdateTaskStatus: (String, TaskStatus) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
-    val hours = timeLeft / 3600
+    val days = timeLeft / 86400
+    val hours = (timeLeft % 86400) / 3600
     val minutes = (timeLeft % 3600) / 60
-    val timeDisplay = if (timeLeft < 0L) "--" else "${hours}h ${minutes}m"
+    val timeDisplay = when {
+        timeLeft < 0L -> "--"
+        days > 0 -> "${days}d ${hours}h"
+        else -> "${hours}h ${minutes}m"
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
