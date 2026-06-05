@@ -33,7 +33,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    private suspend fun syncUserProfile() {
+    suspend fun syncUserProfile() {
         val profile = repository.getUserProfile()
         _currentUser.value = profile
     }

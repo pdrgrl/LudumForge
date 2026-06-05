@@ -63,7 +63,7 @@ fun SubscriptionScreen(
             kotlinx.coroutines.delay(1200)
             val result = dashboardViewModel.upgradeToPremium()
             if (result.isSuccess) {
-                authViewModel.fetchUserProfile()
+                authViewModel.syncUserProfile()
             }
             upgrading = false
             showSuccessDialog = result.isSuccess
