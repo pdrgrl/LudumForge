@@ -50,13 +50,18 @@ fun AppNavigation(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentUser by authViewModel.currentUser.collectAsState()
-    
-    // Determine start destination ONCE to keep the graph stable during the session
-    val startDest = remember {
-        if (FirebaseAuth.getInstance().currentUser != null) Routes.PERSONAL_DASHBOARD
-        else Routes.LOGIN
-    }
 
+    // Stable graph root to prevent Activity closure on logout
+    val startDest = Routes.LOGIN 
+
+    // Redirect to Dashboard if already logged in (Splash logic)
+    LaunchedEffect(currentUser) {
+        if (currentUser != null && (currentRoute == Routes.LOGIN || currentRoute == Routes.REGISTER)) {
+            navController.navigate(Routes.PERSONAL_DASHBOARD) {
+                popUpTo(Routes.LOGIN) { inclusive = true }
+            }
+        }
+    }
     // Single hoisted VM shared by Dashboard, SubscriptionScreen, and TeamWorkspaceScreen
     val dashboardViewModel: PersonalDashboardViewModel = viewModel()
 

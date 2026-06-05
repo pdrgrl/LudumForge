@@ -251,17 +251,25 @@ class PersonalDashboardViewModel : ViewModel() {
         }
     }
 
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+
     private fun loadAllTasksForJams() {
         viewModelScope.launch {
-            _myJams.collect { jams ->
-                val ratios = mutableMapOf<String, Float>()
-                jams.forEach { jam ->
-                    taskRepository.getTasksForProject(jam.id).collect { tasks ->
-                        ratios[jam.id] = if (tasks.isEmpty()) 0f
+            _myJams.flatMapLatest { jams ->
+                if (jams.isEmpty()) return@flatMapLatest flowOf(emptyMap<String, Float>())
+                
+                val ratioFlows = jams.map { jam ->
+                    taskRepository.getTasksForProject(jam.id).map { tasks ->
+                        val ratio = if (tasks.isEmpty()) 0f 
                         else tasks.count { it.status == TaskStatus.DONE }.toFloat() / tasks.size.toFloat()
-                        _completionRatios.value = ratios.toMap()
+                        jam.id to ratio
                     }
                 }
+                combine(ratioFlows) { it.toMap() }
+            }.collect { ratios ->
+                _completionRatios.value = ratios
             }
         }
     }
