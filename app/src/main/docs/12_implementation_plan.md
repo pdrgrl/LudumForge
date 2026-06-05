@@ -1,31 +1,32 @@
 # 12. Implementation Plan: LudumForge
 
-Status of the development roadmap based on project history.
+Updated roadmap based on current code state and proposal requirements.
 
-## ✅ Phase 1: Foundation (Completed)
-- **1.1 Setup:** Project structure, Hilt, Room, Navigation, Compose. [DONE]
-- **1.2 Auth:** Firebase Authentication (Email + Google). [DONE]
-- **1.3 UI Skeleton:** Main Scaffold and Hub navigation. [DONE]
-- **1.4 Basic Data:** Project (Jam) and Task models. [DONE]
-- **1.5 Manual Entry:** CRUD for tasks and projects. [DONE]
+## ✅ Completed (Fases 1 & 3)
+- **Auth & Collaboration:** Firebase Login/Register, Deep-link invites, and `memberIds` sync.
+- **The Arcade:** Real-time itch.io scraping using Jsoup with 15-minute cache.
+- **Workspace:** Real-time task streaming, edit/delete sheets, and status updates (including `REVIEW`).
+- **Subscription:** Tiered system (2 Jams for Free, Unlimited for Premium) based on `activeJam` count.
+- **AI Core:** Roadmap generation with selectable review step.
 
-## 🧠 Phase 2: Intelligence & Offline Survival (In Progress)
-- **2.1 AI Integration:** Gemini SDK integration for roadmap generation. [DONE]
-- **2.2 Roadmap UX:** JSON parsing and task pushing logic. [DONE]
-- **2.3 Offline Engine:** Local timer logic and Terminal UI. [PARTIAL]
-- **2.4 Panic Logic:** Implementation of the task-trimming algorithm. [PENDING]
-- **2.5 Room Caching:** Full task/project caching for offline access. [PENDING]
+## 🧠 Phase 2: Final Polish & "Must-Haves" (Current Focus)
 
-## 🤝 Phase 3: Collaboration & Polishing (Ongoing)
-- **3.1 Real-time Teamwork:** Invite links and collaboration via Firestore. [DONE]
-- **3.2 The Arcade:** itch.io feed integration with caching. [DONE]
-- **3.3 Subscription Layer:** Free vs Premium gate logic (active jam count). [DONE]
-- **3.4 Polishing:** Dynamic theming, fonts, and UI accent updates. [DONE]
-- **3.5 Launch:** Testing and Play Store prep. [PENDING]
+### 2.1 Panic Button (High Priority) 🔴
+- Add "Panic" FAB to `TeamWorkspaceScreen`.
+- Implement logic in `TeamWorkspaceViewModel` to filter tasks via AI.
+- Create a minimal MVP survival list view.
 
----
+### 2.2 User Roles & Badges 🔴
+- Add `FilterChip` role picker to `RegisterScreen`.
+- Update user avatars in the War Room to show role badges.
 
-## 🚩 Priority Gaps
-1. **Panic Button:** Implementation of the removal logic for non-essential tasks.
-2. **Room Persistence:** Completing the `@Database` wiring for Tasks and Projects.
-3. **Task Status:** Expanding the UI to support the `REVIEW` status found in the model.
+### 2.3 Task Creation UI 🟡
+- Add Category selection and Minutes input to the "Add Task" sheet.
+
+### 2.4 Offline & Persistence 🟡
+- Complete Room wiring for `Tasks` and `Projects` (currently only `ActionLog` is stored).
+- Improve the sync loop for manual retries when offline.
+
+## 🚀 Future Polishing (Should-Have)
+- **Task Detail Screen:** Move beyond bottom sheets for a dedicated task view.
+- **Analytics:** Post-jam productivity stats for Premium users.

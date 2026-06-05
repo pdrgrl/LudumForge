@@ -1,36 +1,26 @@
 # 04. Screens and UI: LudumForge
 
-The application follows a "Workspace" metaphor, dividing the experience into 5 main hubs.
+Status of screen implementation as of June 2026.
 
-## 1. The Arcade (Public)
-- **Purpose:** Discovery and community engagement.
-- **Features:** Feed of active Game Jams (Theme, Duration, Link).
-- **UI Elements:** Search bar, cards with countdowns, "Find Team" buttons.
+## 📱 Screen Implementation State
 
-## 2. The Architect (AI Generator)
-- **Purpose:** Initial project setup and planning.
-- **Features:** Text input for game idea, sliders for team size, duration picker.
-- **UI Elements:** Large text area, "Forge Roadmap" button with loading animation (AI processing).
+| Screen (Proposal Name) | Code Name | Implementation State |
+| :--- | :--- | :--- |
+| **Dashboard Pessoal** | `PersonalDashboardScreen` | ✅ Complete |
+| **The War Room** | `TeamWorkspaceScreen` | ✅ Complete (Edit/Delete sync) |
+| **The Architect (IA)** | `RoadmapGeneratorScreen` | ✅ Complete (Gemini 2.5) |
+| **Modo Terminal** | `OfflineTerminalScreen` | ✅ Complete (Monospaced UI) |
+| **The Arcade (Public)** | `PublicJamsScreen` | ✅ Complete (Itch.io Live) |
+| **Subscription** | `SubscriptionScreen` | ✅ Complete (Free/Premium logic) |
+| **Auth** | `LoginScreen` / `RegisterScreen`| ✅ Complete |
 
-## 3. Dashboard Pessoal (Private)
-- **Purpose:** Primary focus screen during the event.
-- **Features:** Global countdown timer, individual progress bars, personal task list.
-- **UI Elements:** Circular timer, "Quick Note" fab, personal task checkboxes.
+## 🎨 UI Details & Accents
+- **Theme:** Material 3 with Dynamic Theming (Dark Mode prioritized).
+- **Fonts:** `Outfit` (Main), `Share Tech Mono` (Terminal/Timer).
+- **Navigation:** Scaffold with Bottom Navigation Bar.
+- **Components:** Custom `PriorityTaskCard`, `LudumForgeTopAppBar`, and `JoinJamBottomSheet`.
 
-## 4. The War Room (Group/Shared)
-- **Purpose:** Team synchronization.
-- **Features:** Kanban board (To-Do, In-Progress, Done) synced across users.
-- **UI Elements:** Swipeable columns, member avatars on task cards, "Panic Button" (bottom of the screen).
-
-## 5. Modo Terminal (Offline)
-- **Purpose:** Minimalist survival interface.
-- **Features:** Monospaced font, cached timer, simple design notepad.
-- **UI Elements:** Terminal-style text output, low-power mode visuals.
-
----
-
-## 🎨 Design Principles
-- **Theme:** Dark Mode by default (to reduce eye strain).
-- **Colors:** Deep blues and mechanical grays with neon accents (Cyan for progress, Amber for warnings, Red for Panic).
-- **Typography:** Share Tech Mono for the Terminal and Outfit for the main UI.
-- **Interaction:** Material 3 Bottom Navigation for switching hubs.
+## 🚧 Pending UI Polish
+- **Role Selection:** Missing role picker (Programmer/Artist/Musician) in `RegisterScreen`.
+- **Add Task Form:** Needs Category and Minutes fields (currently partial).
+- **Panic Button:** UI teaser exists in Subscription, but needs a FAB in the War Room.
