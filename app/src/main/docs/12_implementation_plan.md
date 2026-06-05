@@ -10,11 +10,9 @@ Updated roadmap based on current code state and proposal requirements.
 - **AI Core:** Roadmap generation with selectable review step.
 - **Panic Mode (M1):** AI-powered MVP trimming implemented via Terminal command sequence. [DONE]
 - **User Roles & Badges (M2):** Role selection in registration and badges in the workspace. [DONE]
+- **Task Creation UI (M3):** Category selection and Minutes input integrated into the "Add Task" sheet. [DONE]
 
-## 🧠 Phase 2: Final Polish & "Must-Haves" (Current Focus)
-
-### 2.3 Task Creation UI 🟡
-- Add Category selection and Minutes input to the "Add Task" sheet.
+## 🧠 Phase 2: Final Polish & Survival (Current Focus)
 
 ### 2.4 Offline & Persistence 🟡
 - Complete Room wiring for `Tasks` and `Projects` (currently only `ActionLog` is stored).
@@ -23,3 +21,4 @@ Updated roadmap based on current code state and proposal requirements.
 ## 🚀 Future Polishing (Should-Have)
 - **Task Detail Screen:** Move beyond bottom sheets for a dedicated task view.
 - **Analytics:** Post-jam productivity stats for Premium users.
+- **Unit Testing:** Comprehensive coverage for the AI-driven Panic logic.

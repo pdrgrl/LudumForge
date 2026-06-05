@@ -7,7 +7,7 @@ Status of screen implementation as of June 2026.
 | Screen (Proposal Name) | Code Name | Implementation State |
 | :--- | :--- | :--- |
 | **Dashboard Pessoal** | `PersonalDashboardScreen` | ✅ Complete |
-| **The War Room** | `TeamWorkspaceScreen` | ✅ Complete (Role Badges added) |
+| **The War Room** | `TeamWorkspaceScreen` | ✅ Complete (Role Badges & Full Task Form) |
 | **The Architect (IA)** | `RoadmapGeneratorScreen` | ✅ Complete (Gemini 2.5) |
 | **Modo Terminal** | `OfflineTerminalScreen` | ✅ Complete (Panic Mode integrated) |
 | **The Arcade (Public)** | `PublicJamsScreen` | ✅ Complete (Itch.io Live) |
@@ -32,5 +32,9 @@ Implemented as a specialized terminal experience in `OfflineTerminalScreen`:
 2.  **Analysis:** System logs update in real-time as Gemini identifies non-essential tasks.
 3.  **Confirmation:** Typing `confirm` triggers a batch deletion of suggested tasks.
 
-## 🚧 Pending UI Polish
-- **Add Task Form:** Needs Category and Minutes fields (currently partial).
+## ✅ Task Creation (M3)
+- The manual "Add Task" sheet in the War Room is fully implemented with:
+    - **Task Title** input.
+    - **Estimated Minutes** (numeric keyboard).
+    - **Category Selection** (FilterChips).
+    - **Assignee Picker** (Initial-based avatars).
