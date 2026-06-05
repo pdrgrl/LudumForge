@@ -89,6 +89,8 @@ fun RegisterContent(
                         selectedLabelColor = Color.White
                     ),
                     border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedRole == role,
                         borderColor = Color.Gray.copy(alpha = 0.3f),
                         selectedBorderColor = Color.Transparent,
                         borderWidth = 1.dp
@@ -135,7 +137,7 @@ fun RegisterScreenPreview() {
     LudumForgeTheme {
         RegisterContent(
             uiState = AuthUiState.Idle,
-            onRegister = { _, _ -> },
+            onRegister = { _, _, _, _ -> },
             onNavigateToLogin = {}
         )
     }

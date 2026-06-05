@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.content.Context
 import dam.a51319.ludumforge.models.User
+import dam.a51319.ludumforge.models.UserRole
 
 sealed class AuthUiState {
     object Idle : AuthUiState()
