@@ -21,12 +21,20 @@ The dashboard now serves as a live mission-control center:
     - **Tasks Due:** Count of tasks assigned to you in the active jam (excluding DONE).
     - **Jam Progress:** Real-time percentage calculation of total vs. completed tasks.
 - **"Your Tasks" Feed:** A reactive list that only shows your pending tasks for the currently active jam, updating automatically when you switch jams.
+- **Active Project Cards:** Now support long themes/ideas via a scrollable text container (max 48dp) to prevent UI overflow.
+- **Jam Forge:** The creation dialog now includes a dedicated **Theme / Idea** field, allowing users to brainstorm or record the jam's objective immediately.
 
 ## 🛠️ Studio Workspace (Refined)
 Improvements to the collaborative environment:
 - **Scrollable Selectors:** Horizontal scrolling added to **Category** and **Assignee** rows in task forms to handle large teams and various categories without UI clipping.
-- **Robust Assignments:** The current user is guaranteed to appear in the "Assign To" list, ensuring solo-jammers or new teams can always assign tasks to themselves.
+- **Robust Assignments:** The current user is guaranteed to appear in the "Assign To" list, and the system now includes fallbacks for "Team Member" placeholders if specific profile data is restricted.
 - **Role Badges:** User avatars display specialty badges (Developer, Artist, etc.) directly on task cards.
+
+## 🌍 Global Events (Public Jams)
+The `PublicJamsScreen` has been enhanced for better discovery:
+- **Pull-to-Refresh:** Users can manually trigger a scrape/sync with itch.io and Firestore.
+- **Live Deadlines:** Jam cards display dynamic "Starts:" or "Ends:" timestamps.
+- **Archived Filter:** A new filter that shows jams you've participated in that are now COMPLETED or SUBMITTED.
 
 ## 🚨 Panic Mode (The Command Flow)
 Implemented as a specialized terminal experience in `OfflineTerminalScreen`:

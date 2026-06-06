@@ -14,8 +14,9 @@
 
 ### 3. Game Jam Feeds (Itch.io)
 - **Implementation:** `ItchRepository` using **Jsoup** for live web scraping.
-- **Caching:** 15-minute local cache to prevent rate-limiting and improve performance.
-- **Features:** Fetches Jam title, theme, cover image, and external URL.
+- **Improved Scraper:** Now parses exact timestamps and status tags from itch.io, supporting up to 30 concurrent jams with parallel metadata fetching.
+- **Firestore Cache:** Results are synced to a shared `public_jams` Firestore collection. The app prioritizes this cache unless it is stale (>30 mins) or a manual refresh is requested.
+- **Features:** Fetches Jam title, theme, cover image, status, and precise start/end dates.
 
 ## 🛠️ Internal Services
 

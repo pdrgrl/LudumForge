@@ -43,4 +43,5 @@ Current data structure as implemented in the Kotlin models, supporting both Room
 
 ## 🔗 Implementation Notes
 - **Naming Convention:** The code uses `Project` as the model name but refers to them as `Jams` in the UI and SessionManager.
+- **Hour-Based Logic:** To support "Classic 48h Jams", the creation logic was refactored from days to hours. This allows for precise deadlines and accurate countdowns for short-duration events.
 - **Room Integration:** While `Project` and `Task` are annotated as `@Entity`, they are currently primarily managed via `TaskRepository` (Firestore). ActionLog is the only entity fully wired into `LudumForgeDatabase`.

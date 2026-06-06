@@ -15,6 +15,9 @@ Use this file to document significant help from AI agents during the development
 | 2026-06-05 | Gemini | Stability & Lifecycle | Fixed navigation crashes, Firestore memory leaks, and implemented "Clean Slate" logout. | high |
 | 2026-06-05 | Gemini | UI/Timer Polish | Implemented dynamic timer formatting (Xd Yh) and real-time Jam deletion sync. | medium |
 | 2026-06-05 | Gemini | Final Polish | Refined Dashboard stats (factual data) and Workspace usability (scrollable rows, guaranteed 'Me' in assignees). | medium |
+| 2026-06-06 | Gemini | Timer & Hour Refactor | Refactored `createJam` and `PersonalDashboardViewModel` to use hours, fixing the "48h classic jam" bug. | medium |
+| 2026-06-06 | Gemini | Public Jams Sync | Implemented Firestore caching for itch.io jams and improved scraping accuracy (dates/status). | high |
+| 2026-06-06 | Gemini | Team Coop Fix | Robustified `getUsersByIds` with fallbacks and guaranteed current user profile visibility. | high |
 
 ## How to use this log
 1. **Date:** Today's date (or the date of the task).
