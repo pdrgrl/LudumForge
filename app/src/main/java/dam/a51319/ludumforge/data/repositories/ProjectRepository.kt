@@ -86,6 +86,63 @@ class ProjectRepository {
     }
 
     /**
+     * Public Jams Sync: Fetches jams from a shared collection. 
+     * If the data is old, it will be updated by the caller.
+     */
+    suspend fun getPublicJamsFromFirestore(): List<Project> {
+        return try {
+            val snapshot = db.collection("public_jams")
+                .orderBy("startDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .get()
+                .await()
+            
+            snapshot.documents.mapNotNull { doc ->
+                try {
+                    Project(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        theme = doc.getString("theme") ?: "",
+                        startDate = doc.getDate("startDate") ?: Date(),
+                        endDate = doc.getDate("endDate") ?: Date(),
+                        teamSize = doc.getLong("teamSize")?.toInt() ?: 0,
+                        status = ProjectStatus.valueOf(doc.getString("status") ?: "PLANNING"),
+                        coverImageUrl = doc.getString("coverImageUrl"),
+                        jamUrl = doc.getString("jamUrl")
+                    )
+                } catch (_: Exception) { null }
+            }
+        } catch (e: Exception) { emptyList() }
+    }
+
+    suspend fun savePublicJamsToFirestore(jams: List<Project>) {
+        val batch = db.batch()
+        jams.forEach { jam ->
+            val docRef = db.collection("public_jams").document(jam.id)
+            val data = hashMapOf(
+                "name" to jam.name,
+                "theme" to jam.theme,
+                "startDate" to jam.startDate,
+                "endDate" to jam.endDate,
+                "teamSize" to jam.teamSize,
+                "status" to jam.status.name,
+                "coverImageUrl" to jam.coverImageUrl,
+                "jamUrl" to jam.jamUrl,
+                "lastUpdated" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+            )
+            batch.set(docRef, data)
+        }
+        try { batch.commit().await() } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    suspend fun getPublicJamsLastUpdated(): Long {
+        return try {
+            val snapshot = db.collection("public_jams").limit(1).get().await()
+            if (snapshot.isEmpty) 0L
+            else snapshot.documents.first().getTimestamp("lastUpdated")?.seconds?.let { it * 1000 } ?: 0L
+        } catch (e: Exception) { 0L }
+    }
+
+    /**
      * Returns the jam name for a given projectId (used in the invite confirmation).
      */
     suspend fun getJamById(projectId: String): Project? {
@@ -111,18 +168,33 @@ class ProjectRepository {
         db.collection("projects").document(projectId).update("name", newName).await()
     }
 
+    suspend fun updateProjectStatus(projectId: String, status: ProjectStatus) {
+        try {
+            db.collection("projects").document(projectId)
+                .update("status", status.name)
+                .await()
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
     suspend fun deleteJam(projectId: String) {
         db.collection("projects").document(projectId).delete().await()
     }
 
-    suspend fun createJam(name: String, theme: String, durationHours: Int, teamSize: Int, creatorId: String): String {
+    suspend fun createJam(
+        name: String,
+        theme: String,
+        durationHours: Int,
+        teamSize: Int,
+        creatorId: String,
+        status: ProjectStatus = ProjectStatus.PLANNING
+    ): String {
         val newJam = hashMapOf(
             "name" to name,
             "theme" to theme,
             "startDate" to Date(),
             "endDate" to Date(System.currentTimeMillis() + (durationHours.toLong() * 60 * 60 * 1000)),
             "teamSize" to teamSize,
-            "status" to ProjectStatus.PLANNING.name,
+            "status" to status.name,
             "creatorId" to creatorId,
             "memberIds" to emptyList<String>()
         )

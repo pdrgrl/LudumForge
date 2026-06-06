@@ -8,6 +8,7 @@ import dam.a51319.ludumforge.data.repositories.AuthRepository
 import dam.a51319.ludumforge.data.repositories.ProjectRepository
 import dam.a51319.ludumforge.data.repositories.TaskRepository
 import dam.a51319.ludumforge.models.Project
+import dam.a51319.ludumforge.models.ProjectStatus
 import dam.a51319.ludumforge.models.Task
 import dam.a51319.ludumforge.models.TaskStatus
 import dam.a51319.ludumforge.models.UserPlan
@@ -168,6 +169,7 @@ class PersonalDashboardViewModel : ViewModel() {
         theme: String,
         durationHours: Int = 168,
         teamSize: Int = 1,
+        status: ProjectStatus = ProjectStatus.PLANNING,
         onResult: (String?) -> Unit
     ) {
         val uid = currentUserId ?: run {
@@ -196,7 +198,8 @@ class PersonalDashboardViewModel : ViewModel() {
                     theme = theme,
                     durationHours = durationHours,
                     teamSize = teamSize,
-                    creatorId = uid
+                    creatorId = uid,
+                    status = status
                 )
                 onResult(jamId)
             } catch (e: Exception) {
@@ -243,6 +246,18 @@ class PersonalDashboardViewModel : ViewModel() {
                 }
                 .collect { seconds ->
                     _timeLeftInSeconds.value = seconds
+                    // Auto-complete jam if time ran out
+                    if (seconds == 0L) {
+                        val activeId = SessionManager.activeJamId.value
+                        if (activeId != null) {
+                            val activeJam = _myJams.value.find { it.id == activeId }
+                            if (activeJam != null && activeJam.status == ProjectStatus.ACTIVE) {
+                                viewModelScope.launch {
+                                    projectRepository.updateProjectStatus(activeId, ProjectStatus.COMPLETED)
+                                }
+                            }
+                        }
+                    }
                 }
         }
     }
