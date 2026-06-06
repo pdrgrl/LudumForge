@@ -80,7 +80,7 @@ fun PersonalDashboardScreen(
         onSelectJam = { project -> SessionManager.setActiveJam(project.id, project.name) },
         onRenameJam = { id, name -> viewModel.renameJam(id, name) },
         onDeleteJam = { id -> viewModel.deleteJam(id) },
-        onCreateJam = { name, days -> viewModel.createNewJam(name, "", days) },
+        onCreateJam = { name, theme, days -> viewModel.createNewJam(name, theme, days) },
         onUpdateTaskStatus = { id, status -> viewModel.updateTaskStatus(id, status) },
         snackbarHostState = snackbarHostState
     )
@@ -97,7 +97,7 @@ fun PersonalDashboardContent(
     onSelectJam: (Project) -> Unit,
     onRenameJam: (String, String) -> Unit,
     onDeleteJam: (String) -> Unit,
-    onCreateJam: (String, Int) -> Unit,
+    onCreateJam: (String, String, Int) -> Unit,
     onUpdateTaskStatus: (String, TaskStatus) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
@@ -154,7 +154,7 @@ fun PersonalDashboardContent(
                     }
                     item {
                         CreateJamCard(
-                            onCreate = { name, days -> onCreateJam(name, days) }
+                            onCreate = { name, theme, days -> onCreateJam(name, theme, days) }
                         )
                     }
                 }
@@ -376,9 +376,10 @@ fun ActiveProjectCard(
 }
 
 @Composable
-fun CreateJamCard(onCreate: (String, Int) -> Unit) {
+fun CreateJamCard(onCreate: (String, String, Int) -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var jamName by remember { mutableStateOf("") }
+    var jamTheme by remember { mutableStateOf("") }
     var selectedHours by remember { mutableStateOf(168) }
     val durationOptions = listOf(24, 48, 72, 168, 336, 720)
     var showDurationMenu by remember { mutableStateOf(false) }
@@ -410,7 +411,14 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) {
                     OutlinedTextField(
                         value = jamName, onValueChange = { jamName = it },
                         label = { Text("Jam Name") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack)
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = jamTheme, onValueChange = { jamTheme = it },
+                        label = { Text("Theme / Idea") },
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlack),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Text("Duration", style = MaterialTheme.typography.labelLarge, color = SecondaryGray)
                     Box {
@@ -462,7 +470,7 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) {
             },
             confirmButton = {
                 Button(
-                    onClick = { onCreate(jamName, selectedHours); showDialog = false; jamName = ""; selectedHours = 168 },
+                    onClick = { onCreate(jamName, jamTheme, selectedHours); showDialog = false; jamName = ""; jamTheme = ""; selectedHours = 168 },
                     enabled = jamName.isNotBlank(),
                     colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                 ) { Text("Create", color = Color.White) }
@@ -562,7 +570,7 @@ fun PersonalDashboardScreenPreview() {
             onSelectJam = {},
             onRenameJam = { _, _ -> },
             onDeleteJam = {},
-            onCreateJam = { _, _ -> },
+            onCreateJam = { _, _, _ -> },
             onUpdateTaskStatus = { _, _ -> }
         )
     }
