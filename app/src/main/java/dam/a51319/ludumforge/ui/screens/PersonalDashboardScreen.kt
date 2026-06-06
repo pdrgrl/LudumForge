@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -301,12 +303,19 @@ fun ActiveProjectCard(
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                "Theme: ${project.theme}",
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (isActive) PrimaryBlack.copy(alpha = 0.7f) else OnSurfaceVariant,
-                fontSize = 13.sp
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 48.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    "Theme: ${project.theme}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (isActive) PrimaryBlack.copy(alpha = 0.7f) else OnSurfaceVariant,
+                    fontSize = 13.sp
+                )
+            }
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { onSelectJam() },
