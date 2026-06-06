@@ -1,5 +1,5 @@
 # LudumForge — Project Status
-> Last updated: May 25, 2026 | DAM 2026 — Pedro Grilo nº 51319
+> Last updated: June 6, 2026 | DAM 2026 — Pedro Grilo nº 51319
 
 ---
 
@@ -36,9 +36,9 @@
 | Shared Jams / Invites | ✅ Done | `memberIds` array + Deep Link invite support |
 | Subscription (Free/Premium) | ✅ Done | 2-jam limit for FREE, unlimited for PREMIUM |
 | Category/Minutes in Edit form | ✅ Done | Surfaced in the edit bottom sheet |
-| Category/Minutes in Add form | 🟡 Partial | Fields missing from the "Add Task" sheet UI |
-| Panic Button | 🔴 Not started | UI teaser exists, no logic implemented |
-| User role (Programmer/Artist/Musician) | 🔴 Not started | Logic exists in models, UI picker missing from Register |
+| Category/Minutes in Add form | ✅ Done | Fully integrated in the task form sheet |
+| Panic Button | ✅ Done | Implemented as a Terminal Command (`panic`) in Offline Room |
+| User role (Programmer/Artist/Musician) | ✅ Done | Role picker added to Registration + Firestore storage |
 
 ---
 
@@ -56,7 +56,7 @@
 | Project.memberIds | ✅ | ✅ Added |
 | Task.category (Code/Art/Audio) | ✅ | ✅ Implemented |
 | Task.estimatedMinutes | ✅ | ✅ Implemented |
-| User.role (Programmer/Artist/Musician) | ✅ | 🔴 Not stored during registration |
+| User.role (Programmer/Artist/Musician) | ✅ | ✅ Stored during registration |
 | User.plan (Free/Premium) | ✅ | ✅ Implemented |
 
 ---
@@ -74,4 +74,3 @@ data/daos/           → Room DAOs (SQLite caching)
 models/              → Data classes (Project, Task, User, ActionLog)
 data/SessionManager  → Global active jam state (StateFlow)
 ```
-
