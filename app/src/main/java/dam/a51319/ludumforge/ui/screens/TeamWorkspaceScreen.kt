@@ -606,8 +606,13 @@ fun TaskCard(
 ) {
     val isDone = task.status == TaskStatus.DONE
     val isInProgress = task.status == TaskStatus.IN_PROGRESS
-    val assigneeIds = task.assignedTo?.split(",") ?: emptyList()
-    val assignees = allUsers.filter { assigneeIds.contains(it.id) }
+    val assigneeIds = task.assignedTo?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+    
+    // Resolve assignees from allUsers, fallback to a placeholder if not found (e.g. permission issues)
+    val assignees = assigneeIds.map { id ->
+        allUsers.find { it.id == id } ?: User(id = id, username = "Team Member")
+    }
+
     val contentAlpha = if (isDone) 0.5f else 1f
     var showMenu by remember { mutableStateOf(false) }
     val catColor = categoryColor(task.category)

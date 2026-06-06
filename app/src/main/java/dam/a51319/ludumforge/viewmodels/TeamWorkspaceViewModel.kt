@@ -53,8 +53,17 @@ class TeamWorkspaceViewModel : ViewModel() {
                         _teamMembers.value = emptyList()
                     } else {
                         val ids = (listOf(project.creatorId) + project.memberIds).distinct().filter { it.isNotBlank() }
-                        val users = authRepository.getUsersByIds(ids)
-                        // Sort so creator or "me" is first if possible, but for now just update
+                        val users = authRepository.getUsersByIds(ids).toMutableList()
+                        
+                        // Safety: Ensure the current user is in the list if they are part of the team
+                        // This helps if the batch fetch failed for some reason (like permissions)
+                        val currentUserProfile = authRepository.getUserProfile()
+                        if (currentUserProfile != null && ids.contains(currentUserProfile.id)) {
+                            if (users.none { it.id == currentUserProfile.id }) {
+                                users.add(currentUserProfile)
+                            }
+                        }
+
                         _teamMembers.value = users
                     }
                 }

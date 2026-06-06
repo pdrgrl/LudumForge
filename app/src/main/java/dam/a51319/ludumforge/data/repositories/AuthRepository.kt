@@ -124,11 +124,15 @@ class AuthRepository {
 
     suspend fun getUsersByIds(userIds: List<String>): List<User> {
         if (userIds.isEmpty()) return emptyList()
+        val uniqueIds = userIds.distinct().filter { it.isNotBlank() }
+        
+        // 1. Try batch fetch (fastest)
         return try {
             val snapshot = db.collection("users")
-                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), userIds)
+                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), uniqueIds)
                 .get().await()
-            snapshot.documents.mapNotNull { doc ->
+            
+            val users = snapshot.documents.mapNotNull { doc ->
                 try {
                     User(
                         id = doc.getString("id") ?: doc.id,
@@ -137,12 +141,52 @@ class AuthRepository {
                         role = UserRole.valueOf(doc.getString("role") ?: "DEVELOPER"),
                         plan = UserPlan.valueOf(doc.getString("plan") ?: "FREE")
                     )
-                } catch (e: Exception) {
-                    null
-                }
+                } catch (e: Exception) { null }
             }
+            
+            // If we got everything, return
+            if (users.size == uniqueIds.size) return users
+            
+            // If we got some but not all, maybe some are forbidden? 
+            // Fallthrough to individual fetch for missing ones.
+            val foundIds = users.map { it.id }
+            val missingIds = uniqueIds.filter { it !in foundIds }
+            if (missingIds.isEmpty()) return users
+            
+            val allUsers = users.toMutableList()
+            missingIds.forEach { id ->
+                try {
+                    val doc = db.collection("users").document(id).get().await()
+                    if (doc.exists()) {
+                        allUsers.add(User(
+                            id = doc.getString("id") ?: doc.id,
+                            username = doc.getString("username") ?: "Unknown",
+                            email = doc.getString("email") ?: "",
+                            role = UserRole.valueOf(doc.getString("role") ?: "DEVELOPER"),
+                            plan = UserPlan.valueOf(doc.getString("plan") ?: "FREE")
+                        ))
+                    }
+                } catch (_: Exception) { /* Forbidden or not found */ }
+            }
+            allUsers
         } catch (e: Exception) {
-            emptyList()
+            // 2. Batch failed (likely permissions), try individual fetch
+            val users = mutableListOf<User>()
+            uniqueIds.forEach { id ->
+                try {
+                    val doc = db.collection("users").document(id).get().await()
+                    if (doc.exists()) {
+                        users.add(User(
+                            id = doc.getString("id") ?: doc.id,
+                            username = doc.getString("username") ?: "Unknown",
+                            email = doc.getString("email") ?: "",
+                            role = UserRole.valueOf(doc.getString("role") ?: "DEVELOPER"),
+                            plan = UserPlan.valueOf(doc.getString("plan") ?: "FREE")
+                        ))
+                    }
+                } catch (_: Exception) {}
+            }
+            users
         }
     }
 
