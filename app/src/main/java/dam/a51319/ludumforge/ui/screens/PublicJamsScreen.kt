@@ -52,7 +52,7 @@ fun PublicJamsScreen(
             dashboardViewModel.createNewJamAndReturnId(
                 name = jam.name,
                 theme = seedText,
-                durationDays = 7,
+                durationHours = 7 * 24,
                 teamSize = size
             ) { createdJamId ->
                 if (createdJamId != null) {

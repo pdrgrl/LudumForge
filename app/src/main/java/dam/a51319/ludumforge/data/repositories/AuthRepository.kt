@@ -122,12 +122,47 @@ class AuthRepository {
         } catch (e: Exception) { emptyList() }
     }
 
+    suspend fun getUsersByIds(userIds: List<String>): List<User> {
+        if (userIds.isEmpty()) return emptyList()
+        return try {
+            val snapshot = db.collection("users")
+                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), userIds)
+                .get().await()
+            snapshot.documents.mapNotNull { doc ->
+                try {
+                    User(
+                        id = doc.getString("id") ?: doc.id,
+                        username = doc.getString("username") ?: "Unknown",
+                        email = doc.getString("email") ?: "",
+                        role = UserRole.valueOf(doc.getString("role") ?: "DEVELOPER"),
+                        plan = UserPlan.valueOf(doc.getString("plan") ?: "FREE")
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     /** Flip the caller's Firestore doc to PREMIUM. Call this after payment confirmation. */
     suspend fun upgradeToPremium(): Result<Unit> {
         val uid = auth.currentUser?.uid ?: return Result.failure(Exception("Not signed in"))
         return try {
             db.collection("users").document(uid)
                 .update("plan", "PREMIUM")
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    /** Developer Secret: Downgrade back to FREE. */
+    suspend fun downgradeToFree(): Result<Unit> {
+        val uid = auth.currentUser?.uid ?: return Result.failure(Exception("Not signed in"))
+        return try {
+            db.collection("users").document(uid)
+                .update("plan", "FREE")
                 .await()
             Result.success(Unit)
         } catch (e: Exception) { Result.failure(e) }

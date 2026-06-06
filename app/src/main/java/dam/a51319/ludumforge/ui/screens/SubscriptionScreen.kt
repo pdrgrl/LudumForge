@@ -2,6 +2,7 @@ package dam.a51319.ludumforge.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import dam.a51319.ludumforge.models.UserPlan
 import dam.a51319.ludumforge.ui.theme.*
 import dam.a51319.ludumforge.viewmodels.AuthViewModel
@@ -52,6 +54,7 @@ fun SubscriptionScreen(
     val activeJamCount by dashboardViewModel.jamsThisMonth.collectAsState()
     var upgrading by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     // Only refresh plan from Firestore — jam count is already live via myJams flow
     LaunchedEffect(Unit) {
@@ -80,6 +83,12 @@ fun SubscriptionScreen(
         onNavigateBackFromSuccess = {
             showSuccessDialog = false
             onNavigateBack()
+        },
+        onDevDowngrade = {
+            scope.launch {
+                dashboardViewModel.downgradeToFree()
+                authViewModel.syncUserProfile()
+            }
         }
     )
 }
@@ -92,7 +101,8 @@ fun SubscriptionContent(
     showSuccessDialog: Boolean,
     onUpgradeClick: () -> Unit,
     onDismissSuccessDialog: () -> Unit,
-    onNavigateBackFromSuccess: () -> Unit
+    onNavigateBackFromSuccess: () -> Unit,
+    onDevDowngrade: () -> Unit = {}
 ) {
     if (showSuccessDialog) {
         AlertDialog(
@@ -103,7 +113,7 @@ fun SubscriptionContent(
             confirmButton = {
                 Button(
                     onClick = onNavigateBackFromSuccess,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlack)
+                    colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                 ) { Text("Let's go!", color = Color.White) }
             }
         )
@@ -235,8 +245,18 @@ fun SubscriptionContent(
         // ── CTA ──────────────────────────────────────────────────
         when (currentPlan) {
             UserPlan.PREMIUM -> {
+                var devClickCount by remember { mutableStateOf(0) }
+
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            devClickCount++
+                            if (devClickCount >= 3) {
+                                onDevDowngrade()
+                                devClickCount = 0
+                            }
+                        },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {

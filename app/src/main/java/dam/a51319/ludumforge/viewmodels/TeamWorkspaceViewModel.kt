@@ -8,7 +8,9 @@ import dam.a51319.ludumforge.data.LudumForgeDatabase
 import dam.a51319.ludumforge.data.SessionManager
 import dam.a51319.ludumforge.data.repositories.ActionLogRepository
 import dam.a51319.ludumforge.data.repositories.AuthRepository
+import dam.a51319.ludumforge.data.repositories.ProjectRepository
 import dam.a51319.ludumforge.data.repositories.TaskRepository
+import dam.a51319.ludumforge.models.Project
 import dam.a51319.ludumforge.models.Task
 import dam.a51319.ludumforge.models.TaskCategory
 import dam.a51319.ludumforge.models.TaskStatus
@@ -25,6 +27,7 @@ class TeamWorkspaceViewModel : ViewModel() {
 
     private val taskRepository = TaskRepository()
     private val authRepository = AuthRepository()
+    private val projectRepository = ProjectRepository()
 
     private val _teamTasks = MutableStateFlow<List<Task>>(emptyList())
     val teamTasks: StateFlow<List<Task>> = _teamTasks.asStateFlow()
@@ -34,21 +37,27 @@ class TeamWorkspaceViewModel : ViewModel() {
 
     init {
         loadTeamTasks()
-        loadTeamMembers()
+        observeTeamMembers()
     }
 
-    private fun loadTeamMembers() {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeTeamMembers() {
         viewModelScope.launch {
-            val all = authRepository.getAllUsers()
-            val me = authRepository.getUserProfile()
-            
-            // Ensure at least the current user is in the list
-            val combined = if (me != null && all.none { it.id == me.id }) {
-                (listOf(me) + all).distinctBy { it.id }
-            } else {
-                all
-            }
-            _teamMembers.value = combined
+            SessionManager.activeJamId
+                .flatMapLatest { jamId ->
+                    if (jamId != null) projectRepository.listenToProject(jamId)
+                    else flowOf<Project?>(null)
+                }
+                .collect { project ->
+                    if (project == null) {
+                        _teamMembers.value = emptyList()
+                    } else {
+                        val ids = (listOf(project.creatorId) + project.memberIds).distinct().filter { it.isNotBlank() }
+                        val users = authRepository.getUsersByIds(ids)
+                        // Sort so creator or "me" is first if possible, but for now just update
+                        _teamMembers.value = users
+                    }
+                }
         }
     }
 

@@ -115,12 +115,12 @@ class ProjectRepository {
         db.collection("projects").document(projectId).delete().await()
     }
 
-    suspend fun createJam(name: String, theme: String, durationDays: Int, teamSize: Int, creatorId: String): String {
+    suspend fun createJam(name: String, theme: String, durationHours: Int, teamSize: Int, creatorId: String): String {
         val newJam = hashMapOf(
             "name" to name,
             "theme" to theme,
             "startDate" to Date(),
-            "endDate" to Date(System.currentTimeMillis() + (durationDays.toLong() * 24 * 60 * 60 * 1000)),
+            "endDate" to Date(System.currentTimeMillis() + (durationHours.toLong() * 60 * 60 * 1000)),
             "teamSize" to teamSize,
             "status" to ProjectStatus.PLANNING.name,
             "creatorId" to creatorId,
@@ -132,9 +132,28 @@ class ProjectRepository {
 
     fun listenToProject(projectId: String): Flow<Project?> = callbackFlow {
         val listener = db.collection("projects").document(projectId)
-            .addSnapshotListener { snapshot, error ->
+            .addSnapshotListener { doc, error ->
                 if (error != null) { close(error); return@addSnapshotListener }
-                trySend(snapshot?.toObject(Project::class.java))
+                if (doc != null && doc.exists()) {
+                    try {
+                        val project = Project(
+                            id = doc.id,
+                            name = doc.getString("name") ?: "Untitled Jam",
+                            theme = doc.getString("theme") ?: "",
+                            startDate = doc.getDate("startDate") ?: Date(),
+                            endDate = doc.getDate("endDate") ?: Date(),
+                            teamSize = doc.getLong("teamSize")?.toInt() ?: 1,
+                            status = ProjectStatus.valueOf(doc.getString("status") ?: "PLANNING"),
+                            creatorId = doc.getString("creatorId") ?: "",
+                            memberIds = (doc.get("memberIds") as? List<String>) ?: emptyList()
+                        )
+                        trySend(project)
+                    } catch (e: Exception) {
+                        trySend(null)
+                    }
+                } else {
+                    trySend(null)
+                }
             }
         awaitClose { listener.remove() }
     }

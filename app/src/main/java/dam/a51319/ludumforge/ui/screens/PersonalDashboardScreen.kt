@@ -379,8 +379,8 @@ fun ActiveProjectCard(
 fun CreateJamCard(onCreate: (String, Int) -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var jamName by remember { mutableStateOf("") }
-    var selectedDays by remember { mutableStateOf(7) }
-    val durationOptions = listOf(1, 2, 3, 7, 14, 30, 48)
+    var selectedHours by remember { mutableStateOf(168) }
+    val durationOptions = listOf(24, 48, 72, 168, 336, 720)
     var showDurationMenu by remember { mutableStateOf(false) }
 
     Card(
@@ -421,9 +421,14 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) {
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                when (selectedDays) {
-                                    1 -> "1 day"; 7 -> "1 week"; 14 -> "2 weeks"; 30 -> "1 month"
-                                    48 -> "48h (classic jam)"; else -> "$selectedDays days"
+                                when (selectedHours) {
+                                    24 -> "1 day"
+                                    48 -> "48h (classic jam)"
+                                    72 -> "3 days"
+                                    168 -> "1 week"
+                                    336 -> "2 weeks"
+                                    720 -> "1 month"
+                                    else -> "${selectedHours / 24} days"
                                 },
                                 color = PrimaryBlack
                             )
@@ -435,15 +440,20 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) {
                             onDismissRequest = { showDurationMenu = false },
                             modifier = Modifier.background(SurfaceContainerLowest)
                         ) {
-                            durationOptions.forEach { days ->
+                            durationOptions.forEach { hours ->
                                 DropdownMenuItem(
                                     text = {
-                                        Text(when (days) {
-                                            1 -> "1 day"; 7 -> "1 week"; 14 -> "2 weeks"; 30 -> "1 month"
-                                            48 -> "48h (classic jam)"; else -> "$days days"
+                                        Text(when (hours) {
+                                            24 -> "1 day"
+                                            48 -> "48h (classic jam)"
+                                            72 -> "3 days"
+                                            168 -> "1 week"
+                                            336 -> "2 weeks"
+                                            720 -> "1 month"
+                                            else -> "${hours / 24} days"
                                         })
                                     },
-                                    onClick = { selectedDays = days; showDurationMenu = false }
+                                    onClick = { selectedHours = hours; showDurationMenu = false }
                                 )
                             }
                         }
@@ -452,7 +462,7 @@ fun CreateJamCard(onCreate: (String, Int) -> Unit) {
             },
             confirmButton = {
                 Button(
-                    onClick = { onCreate(jamName, selectedDays); showDialog = false; jamName = ""; selectedDays = 7 },
+                    onClick = { onCreate(jamName, selectedHours); showDialog = false; jamName = ""; selectedHours = 168 },
                     enabled = jamName.isNotBlank(),
                     colors = ButtonDefaults.buttonColors(containerColor = MoltenOrange)
                 ) { Text("Create", color = Color.White) }

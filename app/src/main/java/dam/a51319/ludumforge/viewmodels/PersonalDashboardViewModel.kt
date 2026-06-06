@@ -128,6 +128,12 @@ class PersonalDashboardViewModel : ViewModel() {
         return result
     }
 
+    suspend fun downgradeToFree(): Result<Unit> {
+        val result = authRepository.downgradeToFree()
+        if (result.isSuccess) _currentPlan.value = UserPlan.FREE
+        return result
+    }
+
     private fun loadMyJams() {
         val uid = currentUserId ?: return
         viewModelScope.launch {
@@ -147,11 +153,11 @@ class PersonalDashboardViewModel : ViewModel() {
                 cal.get(Calendar.MONTH) == now.get(Calendar.MONTH)
     }
 
-    fun createNewJam(name: String, theme: String, durationDays: Int = 7) {
+    fun createNewJam(name: String, theme: String, durationHours: Int = 168) {
         createNewJamAndReturnId(
             name = name,
             theme = theme,
-            durationDays = durationDays,
+            durationHours = durationHours,
             teamSize = 1,
             onResult = { }
         )
@@ -160,7 +166,7 @@ class PersonalDashboardViewModel : ViewModel() {
     fun createNewJamAndReturnId(
         name: String,
         theme: String,
-        durationDays: Int = 7,
+        durationHours: Int = 168,
         teamSize: Int = 1,
         onResult: (String?) -> Unit
     ) {
@@ -188,7 +194,7 @@ class PersonalDashboardViewModel : ViewModel() {
                 val jamId = projectRepository.createJam(
                     name = name,
                     theme = theme,
-                    durationDays = durationDays,
+                    durationHours = durationHours,
                     teamSize = teamSize,
                     creatorId = uid
                 )
@@ -219,19 +225,24 @@ class PersonalDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             SessionManager.activeJamId
                 .combine(_myJams) { activeId, jams -> activeId to jams }
-                .collect { (activeId, jams) ->
+                .flatMapLatest { (activeId, jams) ->
                     val activeJam = jams.find { it.id == activeId }
                     val endTimeMs = activeJam?.endDate?.time
                     if (endTimeMs == null) {
-                        _timeLeftInSeconds.value = -1L
+                        flowOf(-1L)
                     } else {
-                        val secondsLeft = ((endTimeMs - System.currentTimeMillis()) / 1000L).coerceAtLeast(0L)
-                        _timeLeftInSeconds.value = secondsLeft
-                        while (_timeLeftInSeconds.value > 0) {
-                            delay(1000L)
-                            _timeLeftInSeconds.value = (_timeLeftInSeconds.value - 1L).coerceAtLeast(0L)
+                        kotlinx.coroutines.flow.flow {
+                            while (true) {
+                                val secondsLeft = ((endTimeMs - System.currentTimeMillis()) / 1000L).coerceAtLeast(0L)
+                                emit(secondsLeft)
+                                if (secondsLeft <= 0L) break
+                                delay(1000L)
+                            }
                         }
                     }
+                }
+                .collect { seconds ->
+                    _timeLeftInSeconds.value = seconds
                 }
         }
     }
